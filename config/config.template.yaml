@@ -1,0 +1,95 @@
+# Processing Configuration
+skip_processed_files: False
+skip_process_review_interval: 180  # Time in Days
+
+# File Locations
+scans_location: '/path/to/input/scans'  # Directory containing medical record scans
+output_location: '/path/to/output'      # Directory for processed output
+output_html: 'medical_records_output.html'  # Name of the main output HTML file
+filename_format: '{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
+
+# OCR Configuration
+ocr_language: 'eng'  # Language(s) for OCR, use '+' to combine multiple (e.g., 'eng+ita')
+processed_checksums_file: 'processed_files.json'  # File to track processed documents
+
+# AI Processing Configuration
+ai_processing:
+  model_name: 'gpt-4o-mini'  # OpenAI model to use e.g., 'gpt-4o-mini'
+  role_prompt: >
+    You are an expert medical records analyst. Your task is to extract structured information 
+    from medical records. Analyze the provided text and return information in the specified format. 
+    If there is not enough information from which to draw conclusions, just return "Not enough information".
+  max_tokens: 10000
+  temperature: 0.1
+  
+  # Function schema for structured responses
+  function_schema:
+    name: "analyze_medical_record"
+    description: "Analyzes medical records to extract key information"
+    parameters:
+      type: "object"
+      properties:
+        summary:
+          type: "string"
+          description: "A concise paragraph summarizing the medical examination or appointment"
+        treatment_date:
+          type: "string"
+          format: "date"
+          description: "The date of the medical visit or treatment in YYYY-MM-DD format"
+        visit_type:
+          type: "string"
+          description: "The type of medical visit or specialty (e.g., ophthalmology, nephrology, gastroenterology)"
+        provider:
+          type: "object"
+          description: "Information about the healthcare provider"
+          properties:
+            name:
+              type: "string"
+              description: "Surname of the doctor or provider, if available"
+            facility:
+              type: "string"
+              description: "Name of the hospital or clinic"
+          required: ["facility"]
+        primary_condition:
+          type: "string"
+          description: "The main medical condition being discussed"
+        diagnoses:
+          type: "array"
+          items:
+            type: "string"
+          description: "List of diagnoses mentioned in the record"
+        treatments:
+          type: "array"
+          items:
+            type: "string"
+          description: "List of recommended treatments or next steps"
+        test_results:
+          type: "object"
+          description: "Significant test results or measurements"
+          properties:
+            name:
+              type: "string"
+              description: "Name of the test"
+            value:
+              type: "string"
+              description: "Test result or measurement value"
+            interpretation:
+              type: "string"
+              description: "Clinical interpretation of the result"
+          required: ["name", "value"]
+        medications:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              name:
+                type: "string"
+                description: "Name of the medication"
+              dosage:
+                type: "string"
+                description: "Prescribed dosage"
+              frequency:
+                type: "string"
+                description: "How often to take the medication"
+            required: ["name"]
+      required: ["summary", "visit_type", "provider", "primary_condition", "diagnoses", "treatments", "treatment_date"]

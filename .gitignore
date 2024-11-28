@@ -1,0 +1,49 @@
+# Configuration - only ignore the actual config file, not the template
+/config/config.yaml
+*.env
+
+# Logs
+*.log
+*.log.*
+medical_rec_process.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+processed_files.json
+output/
+scans/
+
+# Virtual Environment
+venv/
+.env/
+.venv/
+ENV/
