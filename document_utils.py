@@ -23,10 +23,21 @@ def create_detail_page(record, output_dir):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Record Details - {record['new_filename']}</title>
     <link rel="stylesheet" href="../styles.css">
+    <style>
+        .raw-text {{
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+        }}
+    </style>
 </head>
 <body>
     <div class="record-details">
-        <h2 class="record-title">{record['new_filename']}</h2>
+        <h2 class="record-title">{{record['new_filename']}}</h2>
         <div class="actions">
             <button class="btn btn-print" onclick="window.print()">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -35,21 +46,25 @@ def create_detail_page(record, output_dir):
                 </svg>
                 Print
             </button>
-            <a href="../../records/{record['new_filename']}" target="_blank" class="btn">View Original</a>
+            <a href="../../records/{{record['new_filename']}}" target="_blank" class="btn">View Original</a>
         </div>
         <table>
-            <tr><th>Treatment Date (Regex)</th><td>{record.get('treatment_date', 'N/A')}</td></tr>
-            <tr><th>Treatment Date (AI)</th><td>{record.get('ai_treatment_date', 'N/A')}</td></tr>
-            <tr><th>Visit Type</th><td>{record.get('visit_type', 'N/A')}</td></tr>
-            <tr><th>Provider Name</th><td>{record.get('provider_name', 'N/A')}</td></tr>
-            <tr><th>Provider Facility</th><td>{record.get('provider_facility', 'N/A')}</td></tr>
-            <tr><th>Primary Condition</th><td>{record.get('primary_condition', 'N/A')}</td></tr>
-            <tr><th>Diagnoses</th><td>{record.get('diagnoses', 'N/A')}</td></tr>
-            <tr><th>Treatments</th><td>{record.get('treatments', 'N/A')}</td></tr>
-            <tr><th>Medications</th><td>{record.get('medications', 'N/A')}</td></tr>
-            <tr><th>Test Results</th><td>{record.get('test_results', 'N/A')}</td></tr>
-            <tr><th>Summary</th><td>{record.get('summary', 'N/A')}</td></tr>
-            <tr><th>Last Processed</th><td>{record.get('last_processed', 'N/A')}</td></tr>
+            <tr><th>Treatment Date (Regex)</th><td>{{record.get('treatment_date', 'N/A')}}</td></tr>
+            <tr><th>Treatment Date (AI)</th><td>{{record.get('ai_treatment_date', 'N/A')}}</td></tr>
+            <tr><th>Visit Type</th><td>{{record.get('visit_type', 'N/A')}}</td></tr>
+            <tr><th>Provider Name</th><td>{{record.get('provider_name', 'N/A')}}</td></tr>
+            <tr><th>Provider Facility</th><td>{{record.get('provider_facility', 'N/A')}}</td></tr>
+            <tr><th>Primary Condition</th><td>{{record.get('primary_condition', 'N/A')}}</td></tr>
+            <tr><th>Diagnoses</th><td>{{record.get('diagnoses', 'N/A')}}</td></tr>
+            <tr><th>Treatments</th><td>{{record.get('treatments', 'N/A')}}</td></tr>
+            <tr><th>Medications</th><td>{{record.get('medications', 'N/A')}}</td></tr>
+            <tr><th>Test Results</th><td>{{record.get('test_results', 'N/A')}}</td></tr>
+            <tr><th>Summary</th><td>{{record.get('summary', 'N/A')}}</td></tr>
+            <tr><th>Last Processed</th><td>{{record.get('last_processed', 'N/A')}}</td></tr>
+            <tr>
+                <th>Raw Extracted Text</th>
+                <td><div class="raw-text">{{record.get('text', 'N/A')}}</div></td>
+            </tr>
         </table>
     </div>
 </body>
@@ -80,6 +95,7 @@ def create_html_page(records, output_path):
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         
         header {
@@ -89,6 +105,7 @@ def create_html_page(records, output_path):
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex-shrink: 0;
         }
         
         .logo {
@@ -99,18 +116,34 @@ def create_html_page(records, output_path):
         h1 {
             color: #2c3e50;
             font-size: 1.5rem;
+            margin: 0;
         }
         
         .content {
             display: flex;
             flex: 1;
-            overflow: hidden;
+            min-height: 0;  /* Important for nested flexbox scrolling */
         }
         
         .file-list {
             width: 33%;
             background: #fff;
             border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            min-width: 300px;
+        }
+        
+        .file-list-header {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .file-list-content {
+            flex: 1;
             overflow-y: auto;
             padding: 1rem;
         }
@@ -127,6 +160,7 @@ def create_html_page(records, output_path):
             border-left: 3px solid transparent;
             display: flex;
             align-items: center;
+            transition: all 0.2s ease;
         }
         
         .file-list li .number {
@@ -149,17 +183,31 @@ def create_html_page(records, output_path):
         
         .detail-view {
             width: 67%;
+            background: #f5f6fa;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;  /* Important for text truncation */
+        }
+        
+        .detail-view-content {
+            flex: 1;
             overflow-y: auto;
             padding: 2rem;
-            background: #f5f6fa;
+        }
+        
+        .record-details {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-radius: 8px;
+            margin-top: 1rem;
         }
         
         th, td {
@@ -191,6 +239,7 @@ def create_html_page(records, output_path):
             cursor: pointer;
             text-decoration: none;
             font-size: 0.9rem;
+            transition: opacity 0.2s;
         }
         
         .btn:hover {
@@ -201,6 +250,34 @@ def create_html_page(records, output_path):
             font-size: 1.25rem;
             margin-bottom: 1rem;
             color: #2c3e50;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f0f2f5;
+        }
+        
+        .raw-text {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            .file-list, .detail-view {
+                width: 100%;
+                height: 50vh;
+            }
+            .file-list {
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
         }
     </style>
 </head>
@@ -212,18 +289,23 @@ def create_html_page(records, output_path):
     
     <div class="content">
         <div class="file-list">
-            <ul>"""
+            <div class="file-list-header">Medical Records</div>
+            <div class="file-list-content">
+                <ul>"""
     
     # Add file list items with numbers
     for i, record in enumerate(sorted_records, 1):
         filename = record.get('new_filename', os.path.basename(record['file_path']))
-        html_content += f'\n                <li data-index="{i-1}"><span class="number">#{i}</span>{filename}</li>'
+        html_content += f'\n                    <li data-index="{i-1}"><span class="number">#{i}</span>{filename}</li>'
 
     html_content += """
-            </ul>
+                </ul>
+            </div>
         </div>
         <div class="detail-view">
-            <div id="record-details"></div>
+            <div class="detail-view-content">
+                <div id="record-details"></div>
+            </div>
         </div>
     </div>
 
@@ -237,31 +319,37 @@ def create_html_page(records, output_path):
             
             const record = records[index];
             const detailsHtml = `
-                <h2 class="record-title">${record.new_filename}</h2>
-                <div class="actions">
-                    <button class="btn" onclick="window.print()">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                            <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
-                        </svg>
-                        Print
-                    </button>
-                    <a href="records/${record.new_filename}" target="_blank" class="btn">View Original</a>
+                <div class="record-details">
+                    <h2 class="record-title">${record.new_filename}</h2>
+                    <div class="actions">
+                        <button class="btn" onclick="window.print()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                            </svg>
+                            Print
+                        </button>
+                        <a href="records/${record.new_filename}" target="_blank" class="btn">View Original</a>
+                    </div>
+                    <table>
+                        <tr><th>Treatment Date (Regex)</th><td>${record.treatment_date || 'N/A'}</td></tr>
+                        <tr><th>Treatment Date (AI)</th><td>${record.ai_treatment_date || 'N/A'}</td></tr>
+                        <tr><th>Visit Type</th><td>${record.visit_type || 'N/A'}</td></tr>
+                        <tr><th>Provider Name</th><td>${record.provider_name || 'N/A'}</td></tr>
+                        <tr><th>Provider Facility</th><td>${record.provider_facility || 'N/A'}</td></tr>
+                        <tr><th>Primary Condition</th><td>${record.primary_condition || 'N/A'}</td></tr>
+                        <tr><th>Diagnoses</th><td>${Array.isArray(record.diagnoses) ? record.diagnoses.join('; ') : (record.diagnoses || 'N/A')}</td></tr>
+                        <tr><th>Treatments</th><td>${Array.isArray(record.treatments) ? record.treatments.join('; ') : (record.treatments || 'N/A')}</td></tr>
+                        <tr><th>Medications</th><td>${Array.isArray(record.medications) ? record.medications.join('; ') : (record.medications || 'N/A')}</td></tr>
+                        <tr><th>Test Results</th><td>${Array.isArray(record.test_results) ? record.test_results.join('; ') : (record.test_results || 'N/A')}</td></tr>
+                        <tr><th>Summary</th><td>${record.summary || 'N/A'}</td></tr>
+                        <tr><th>Last Processed</th><td>${record.last_processed || 'N/A'}</td></tr>
+                        <tr>
+                            <th>Raw Extracted Text</th>
+                            <td><div class="raw-text">${record.text || 'N/A'}</div></td>
+                        </tr>
+                    </table>
                 </div>
-                <table>
-                    <tr><th>Treatment Date (Regex)</th><td>${record.treatment_date || 'N/A'}</td></tr>
-                    <tr><th>Treatment Date (AI)</th><td>${record.ai_treatment_date || 'N/A'}</td></tr>
-                    <tr><th>Visit Type</th><td>${record.visit_type || 'N/A'}</td></tr>
-                    <tr><th>Provider Name</th><td>${record.provider_name || 'N/A'}</td></tr>
-                    <tr><th>Provider Facility</th><td>${record.provider_facility || 'N/A'}</td></tr>
-                    <tr><th>Primary Condition</th><td>${record.primary_condition || 'N/A'}</td></tr>
-                    <tr><th>Diagnoses</th><td>${record.diagnoses || 'N/A'}</td></tr>
-                    <tr><th>Treatments</th><td>${record.treatments || 'N/A'}</td></tr>
-                    <tr><th>Medications</th><td>${record.medications || 'N/A'}</td></tr>
-                    <tr><th>Test Results</th><td>${record.test_results || 'N/A'}</td></tr>
-                    <tr><th>Summary</th><td>${record.summary || 'N/A'}</td></tr>
-                    <tr><th>Last Processed</th><td>${record.last_processed || 'N/A'}</td></tr>
-                </table>
             `;
             
             document.getElementById('record-details').innerHTML = detailsHtml;
@@ -269,6 +357,9 @@ def create_html_page(records, output_path):
             // Update active state
             document.querySelectorAll('.file-list li').forEach(item => item.classList.remove('active'));
             document.querySelector(`[data-index="${index}"]`).classList.add('active');
+            
+            // Scroll the active item into view in the file list
+            document.querySelector(`[data-index="${index}"]`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
         // Add click handlers
