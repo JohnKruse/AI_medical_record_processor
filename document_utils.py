@@ -77,7 +77,15 @@ def create_detail_page(record, output_dir):
 
 def create_html_page(records, output_path):
     """Create main HTML page with links to detail pages."""
-    # Sort records by filename in reverse order
+    if not records:
+        logging.warning("No records to create HTML page")
+        return
+
+    # Ensure records is a list of dictionaries
+    if isinstance(records, pd.DataFrame):
+        records = records.to_dict('records')
+
+    # Sort records by filename (newest first)
     sorted_records = sorted(records, key=lambda x: x.get('new_filename', ''), reverse=True)
     
     html_content = """<!DOCTYPE html>

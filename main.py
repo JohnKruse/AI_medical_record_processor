@@ -92,129 +92,118 @@ def process_files(config):
     ensure_output_location(config)
     
     output_html = config.get('output_html', 'output.html')
-    skip_processed = config['skip_processed_files']  # Use exact value from config
-    skip_process_review_interval = config.get('skip_process_review_interval', 180)  # Default to 180 days
+    skip_processed = config['skip_processed_files']
+    skip_process_review_interval = config.get('skip_process_review_interval', 180)
     checksums_file = os.path.join(output_location, 'data_files', 'processed_files.json')
+    extracted_data_file = os.path.join(output_location, 'data_files', 'extracted_data.csv')
     
     logging.info(f"Processing settings: skip_processed={skip_processed}, review_interval={skip_process_review_interval} days")
-    logging.info(f"Using checksums file: {checksums_file}")
     
-    records = []
+    # Load existing checksums and processed data
+    processed_checksums = load_processed_checksums(checksums_file)
+    existing_records = []
+    
+    if skip_processed and os.path.exists(extracted_data_file):
+        try:
+            existing_df = pd.read_csv(extracted_data_file)
+            existing_records = existing_df.to_dict('records')
+            logging.info(f"Loaded {len(existing_records)} existing records from {extracted_data_file}")
+        except Exception as e:
+            logging.error(f"Error loading existing records: {e}")
+    
+    new_records = []
     previous_file = None
-
-    # Load existing checksums if skipping processed files
-    processed_checksums = load_processed_checksums(checksums_file) if skip_processed else {}
-    logging.info(f"Loaded {len(processed_checksums)} processed file checksums")
-
-    # Get the current datetime once
     current_datetime = dt.now()
-    current_datetime_str = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
-
-    # Retrieve the OpenAI API key once at the start
+    
+    # Get the OpenAI API key
     openai_api_key = os.getenv('OPENAI_API_KEY') or config.get('OPENAI_API_KEY')
-    if openai_api_key is None:
-        logging.error("OpenAI API Key is not set.")
-    else:
-        logging.info(f"OpenAI API Key: {openai_api_key[:15]}")
-
-    # Check for files in scans directory
+    if not openai_api_key:
+        raise ValueError("OpenAI API Key is not set")
+    
+    # Process files
     files_found = False
     all_files = []
     for root, dirs, files in os.walk(scans_location):
         if files:
             files_found = True
             for file in sorted(files):
-                if not file.startswith('.'):  # Skip dot files
+                if not file.startswith('.'):
                     all_files.append((root, file))
     
     if files_found:
         total_files = len(all_files)
-        print(f"\nFound {total_files} files to process")
+        print(f"\nFound {total_files} files to examine")
         
         for idx, (root, file) in enumerate(all_files, 1):
-            print(f"\nProcessing file {idx} / {total_files}: {file}")
             file_path = os.path.join(root, file)
-            
-            # Calculate checksum
             file_checksum = calculate_checksum(file_path)
             
-            # Check if file was previously processed
-            if file_checksum in processed_checksums:
+            # Check if file should be skipped
+            should_process = True
+            if skip_processed and file_checksum in processed_checksums:
                 last_processed_str = processed_checksums[file_checksum].get('processed_date')
                 if last_processed_str:
-                    try:
-                        last_processed = dt.strptime(last_processed_str, '%Y-%m-%d %H:%M:%S')
-                        days_since_processed = (current_datetime - last_processed).days
-                        
-                        if skip_processed:
-                            if days_since_processed < skip_process_review_interval:
-                                print(f"Skipping file processed {days_since_processed} days ago: {file}")
-                                continue
-                            else:
-                                print(f"File was processed {days_since_processed} days ago (> {skip_process_review_interval} days). Reprocessing: {file}")
-                        else:
-                            print(f"File exists but skip_processed is False. Processing: {file}")
-                    except ValueError as e:
-                        logging.error(f"Error parsing last processed date: {str(e)}")
-                        print(f"Error with last processed date. Processing: {file}")
-                else:
-                    print(f"File exists but no process date found. Processing: {file}")
-            else:
-                print(f"New file. Processing: {file}")
-
-            try:
-                # Process file and extract text
-                text = process_file(file_path, config, openai_api_key)
-                print("Successfully extracted text")
-
-                # Extract treatment date from text using first date found
-                treatment_date = find_first_date_in_text(text)
-                if treatment_date:
-                    metadata = {'date_of_origin': dt.strptime(treatment_date, '%Y-%m-%d')}
-                else:
-                    metadata = {}
-                logging.info(f"Using metadata for filename: {metadata}")
-
-                # Create initial record without filename
-                record = {
-                    'file_path': file_path,
-                    'original_filename': file,
-                    'checksum': file_checksum,
-                    'text': text,
-                    'primary_condition': '',
-                    'diagnoses': [],
-                    'treatments': [],
-                    'medications': [],
-                    'test_results': [],
-                    'visit_type': '',
-                    'provider_name': '',
-                    'provider_facility': '',
-                    'summary': '',
-                    'treatment_date': treatment_date,
-                    'last_processed': current_datetime_str
-                }
-
-                # Update processed checksums using the current datetime
-                processed_checksums[file_checksum] = {
-                    'original_file': file,
-                    'processed_date': current_datetime_str
-                }
-                
-                # Save checksums after each file is processed
-                save_processed_checksums(checksums_file, processed_checksums)
-
-                # Add record to list for AI processing
-                records.append(record)
-
-            except Exception as e:
-                logging.error(f"Error processing {file}: {str(e)}")
-                continue
-
-    if not files_found:
-        logging.warning(f"No files found in scans directory: {scans_location}")
-
-    print(f"\nSuccessfully processed {len(records)} files")
-    return records, processed_checksums, checksums_file, openai_api_key
+                    last_processed = dt.strptime(last_processed_str, '%Y-%m-%d %H:%M:%S')
+                    days_since_processed = (current_datetime - last_processed).days
+                    
+                    if days_since_processed < skip_process_review_interval:
+                        print(f"Skipping file processed {days_since_processed} days ago: {file}")
+                        should_process = False
+            
+            if should_process:
+                try:
+                    print(f"\nProcessing file {idx} / {total_files}: {file}")
+                    
+                    # Process the file
+                    text = process_file(file_path, config, openai_api_key)
+                    if not text:
+                        continue
+                    
+                    # Create record
+                    record = {
+                        'file_path': file_path,
+                        'original_filename': file,
+                        'text': text,
+                        'checksum': file_checksum,
+                        'processed_date': current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    
+                    new_records.append(record)
+                    processed_checksums[file_checksum] = {
+                        'processed_date': current_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+                        'original_file': file
+                    }
+                    
+                    save_processed_checksums(checksums_file, processed_checksums)
+                    
+                except Exception as e:
+                    logging.error(f"Error processing {file}: {str(e)}")
+                    continue
+    
+    # Combine existing and new records
+    all_records = existing_records + new_records
+    
+    if not all_records:
+        logging.warning("No records to process")
+        return [], processed_checksums, checksums_file, openai_api_key
+    
+    # Only process new records through AI
+    if new_records:
+        new_records_df = pd.DataFrame(new_records)
+        processed_new_df = batch_process_medical_records(new_records_df, config, openai_api_key)
+        
+        # Convert existing records to DataFrame
+        if existing_records:
+            existing_df = pd.DataFrame(existing_records)
+            # Combine existing and new records
+            records_df = pd.concat([existing_df, processed_new_df], ignore_index=True)
+        else:
+            records_df = processed_new_df
+    else:
+        # If no new records, just use existing ones
+        records_df = pd.DataFrame(existing_records)
+    
+    return records_df.to_dict('records'), processed_checksums, checksums_file, openai_api_key
 
 def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, Any], openai_api_key: str) -> pd.DataFrame:
     logging.info("Starting batch_process_medical_records")
@@ -241,9 +230,13 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
         'last_processed': current_datetime  # New column for processing timestamp
     }
     
+    # Initialize new columns with default values if they don't exist
     for col, default_value in new_columns.items():
         if col not in records_df.columns:
-            records_df[col] = default_value
+            if isinstance(default_value, list):
+                records_df[col] = [[] for _ in range(len(records_df))]
+            else:
+                records_df[col] = pd.Series([default_value] * len(records_df))
     
     # Extract treatment dates from text using first date found
     records_df['treatment_date'] = records_df['text'].apply(find_first_date_in_text)
@@ -502,90 +495,75 @@ def main():
         # Ensure output location
         ensure_output_location(config)
         
-        # Process all files and get the API key
-        records, processed_checksums, checksums_file, openai_api_key = process_files(config)
+        # Process files and get records
+        records = []
+        processed_checksums = {}
+        checksums_file = ""
+        openai_api_key = ""
         
-        if records:
-            # Save checksums to data_files directory
-            checksums_file = os.path.join(config['output_location'], 'data_files', 'processed_files.json')
-            save_processed_checksums(checksums_file, processed_checksums)
-            
-            # Convert records to DataFrame for AI processing
-            records_df = pd.DataFrame(records)
-            logging.info(f"DataFrame before saving: {records_df.info()}")
-            
-            # Process records through AI
-            logging.info("Processing records - batch_process_medical_records")
-            records_df = batch_process_medical_records(
-                records_df=records_df,
-                config=config,
-                openai_api_key=openai_api_key
-            )
-            
-            # Now create filenames and copy files after AI processing
-            output_location = config['output_location']
-            records_dir = os.path.join(output_location, 'records')
-            for index, record in records_df.iterrows():
-                try:
-                    # Create new filename using AI-processed data
-                    new_filename = create_new_filename({}, record.to_dict(), config)
-                    ext = os.path.splitext(record['original_filename'])[1]
-                    new_filename = f"{new_filename}{ext}"
-                    new_file_path = os.path.join(records_dir, new_filename)
-                    
-                    # Copy the file
-                    shutil.copy2(record['file_path'], new_file_path)
-                    logging.info(f"Copied file to: {new_file_path}")
-                    
-                    # Update record with new filename and path
-                    records_df.at[index, 'new_filename'] = new_filename
-                    records_df.at[index, 'file_path'] = new_file_path
-                    
-                    # Update checksums
+        try:
+            records, processed_checksums, checksums_file, openai_api_key = process_files(config)
+        except Exception as e:
+            logging.error(f"Error processing files: {str(e)}")
+            raise
+        
+        if not records:
+            logging.warning("No records to process")
+            return
+        
+        # Convert to DataFrame and process through AI
+        logging.info("Processing records through AI")
+        records_df = pd.DataFrame(records)
+        records_df = batch_process_medical_records(records_df, config, openai_api_key)
+        
+        # Create filenames and copy files
+        output_location = config['output_location']
+        records_dir = os.path.join(output_location, 'records')
+        
+        for index, record in records_df.iterrows():
+            try:
+                # Create new filename using AI-processed data
+                new_filename = create_new_filename({}, record.to_dict(), config)
+                ext = os.path.splitext(record['original_filename'])[1]
+                new_filename = f"{new_filename}{ext}"
+                new_file_path = os.path.join(records_dir, new_filename)
+                
+                # Copy the file
+                shutil.copy2(record['file_path'], new_file_path)
+                logging.info(f"Copied file to: {new_file_path}")
+                
+                # Update record with new filename and path
+                records_df.at[index, 'new_filename'] = new_filename
+                records_df.at[index, 'file_path'] = new_file_path
+                
+                # Update checksums
+                if record['checksum'] in processed_checksums:
                     processed_checksums[record['checksum']]['processed_file'] = new_filename
-                except Exception as e:
-                    logging.error(f"Error creating filename for record {index}: {str(e)}")
-            
-            # Create output files in their respective directories
-            html_path = os.path.join(output_location, config.get('output_html', 'output.html'))
-            csv_path = os.path.join(output_location, 'data_files', 'extracted_data.csv')
-            
-            # Log DataFrame info before saving
-            logging.info("DataFrame columns before saving:")
-            for col in records_df.columns:
-                logging.info(f"Column: {col}")
-            
-            # Format lists for CSV
-            for col in ['diagnoses', 'treatments', 'medications']:
-                records_df[col] = records_df[col].apply(lambda x: '; '.join(x) if isinstance(x, list) else x)
-            
-            # Format test results with more detail
-            def format_test_result(x):
-                if not isinstance(x, list):
-                    return x
-                formatted_tests = []
-                for test in x:
-                    if isinstance(test, dict):
-                        test_str = f"{test.get('name', '')}: {test.get('value', '')}"
-                        if test.get('interpretation'):
-                            test_str += f" - {test['interpretation']}"
-                        formatted_tests.append(test_str)
-                    else:
-                        formatted_tests.append(str(test))
-                return '; '.join(formatted_tests)
-            
-            records_df['test_results'] = records_df['test_results'].apply(format_test_result)
-            
-            # Save directly to CSV
-            records_df.to_csv(csv_path, index=False)
-            logging.info(f"Saved extracted data to CSV: {csv_path}")
-            
-            # Create HTML from records
-            create_html_page(records_df.to_dict('records'), html_path)
-            
-            logging.info(f"Processing complete. Processed {len(records)} files.")
-        else:
-            logging.warning("No files were processed")
+            except Exception as e:
+                logging.error(f"Error creating filename for record {index}: {str(e)}")
+        
+        # Save checksums
+        if checksums_file:
+            save_processed_checksums(checksums_file, processed_checksums)
+        
+        # Format data for CSV
+        csv_df = records_df.copy()
+        for col in ['diagnoses', 'treatments', 'medications']:
+            if col in csv_df.columns:
+                csv_df[col] = csv_df[col].apply(lambda x: '; '.join(x) if isinstance(x, list) else x)
+        
+        # Save CSV
+        csv_path = os.path.join(output_location, 'data_files', 'extracted_data.csv')
+        csv_df.to_csv(csv_path, index=False)
+        logging.info(f"Saved data to CSV: {csv_path}")
+        
+        # Generate HTML
+        output_html = config.get('output_html', 'output.html')
+        output_html_path = os.path.join(output_location, output_html)
+        create_html_page(records_df.to_dict('records'), output_html_path)
+        logging.info(f"Created HTML output at: {output_html_path}")
+        
+        logging.info("Processing complete")
         
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}", exc_info=True)
