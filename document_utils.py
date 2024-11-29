@@ -88,79 +88,105 @@ def create_html_page(records, output_path):
     # Sort records by filename (newest first)
     sorted_records = sorted(records, key=lambda x: x.get('new_filename', ''), reverse=True)
     
-    html_content = """<!DOCTYPE html>
+    # Get the absolute path of the output directory
+    output_dir = os.path.dirname(os.path.abspath(output_path))
+    
+    html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Records Viewer</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         
-        body {
+        body {{
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
+        }}
         
-        header {
+        header {{
             background: #fff;
             padding: 1rem;
             border-bottom: 1px solid #ddd;
             display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }}
+        
+        .header-main {{
+            display: flex;
             align-items: center;
             gap: 1rem;
-            flex-shrink: 0;
-        }
+        }}
         
-        .logo {
+        .header-info {{
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }}
+        
+        .header-info code {{
+            background: #fff;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            border: 1px solid #e9ecef;
+        }}
+        
+        .logo {{
             height: 40px;
             width: auto;
-        }
+        }}
         
-        h1 {
+        h1 {{
             color: #2c3e50;
             font-size: 1.5rem;
             margin: 0;
-        }
+        }}
         
-        .content {
+        .content {{
             display: flex;
             flex: 1;
             min-height: 0;  /* Important for nested flexbox scrolling */
-        }
+        }}
         
-        .file-list {
+        .file-list {{
             width: 33%;
             background: #fff;
             border-right: 1px solid #ddd;
             display: flex;
             flex-direction: column;
             min-width: 300px;
-        }
+        }}
         
-        .file-list-header {
+        .file-list-header {{
             padding: 1rem;
             background: #f8f9fa;
             border-bottom: 1px solid #ddd;
             font-weight: 600;
             color: #2c3e50;
-        }
+        }}
         
-        .file-list-content {
+        .file-list-content {{
             flex: 1;
             overflow-y: auto;
             padding: 1rem;
-        }
+        }}
         
-        .file-list ul {
+        .file-list ul {{
             list-style: none;
-        }
+        }}
         
-        .file-list li {
+        .file-list li {{
             padding: 0.75rem 1rem;
             cursor: pointer;
             border-radius: 4px;
@@ -169,73 +195,73 @@ def create_html_page(records, output_path):
             display: flex;
             align-items: center;
             transition: all 0.2s ease;
-        }
+        }}
         
-        .file-list li .number {
+        .file-list li .number {{
             color: #666;
             font-size: 0.9em;
             margin-right: 1rem;
             min-width: 2em;
             text-align: right;
-        }
+        }}
         
-        .file-list li:hover {
+        .file-list li:hover {{
             background: #f5f6fa;
-        }
+        }}
         
-        .file-list li.active {
+        .file-list li.active {{
             background: #e3f2fd;
             border-left-color: #3498db;
             font-weight: 600;
-        }
+        }}
         
-        .detail-view {
+        .detail-view {{
             width: 67%;
             background: #f5f6fa;
             display: flex;
             flex-direction: column;
             min-width: 0;  /* Important for text truncation */
-        }
+        }}
         
-        .detail-view-content {
+        .detail-view-content {{
             flex: 1;
             overflow-y: auto;
             padding: 2rem;
-        }
+        }}
         
-        .record-details {
+        .record-details {{
             background: white;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 2rem;
             max-width: 1200px;
             margin: 0 auto;
-        }
+        }}
         
-        table {
+        table {{
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
-        }
+        }}
         
-        th, td {
+        th, td {{
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid #ddd;
-        }
+        }}
         
-        th {
+        th {{
             width: 200px;
             background: #f8f9fa;
             font-weight: 600;
-        }
+        }}
         
-        .actions {
+        .actions {{
             margin-bottom: 1rem;
             text-align: right;
-        }
+        }}
         
-        .btn {
+        .btn {{
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
@@ -248,21 +274,21 @@ def create_html_page(records, output_path):
             text-decoration: none;
             font-size: 0.9rem;
             transition: opacity 0.2s;
-        }
+        }}
         
-        .btn:hover {
+        .btn:hover {{
             opacity: 0.9;
-        }
+        }}
         
-        .record-title {
+        .record-title {{
             font-size: 1.25rem;
             margin-bottom: 1rem;
             color: #2c3e50;
             padding-bottom: 0.5rem;
             border-bottom: 2px solid #f0f2f5;
-        }
+        }}
         
-        .raw-text {
+        .raw-text {{
             white-space: pre-wrap;
             font-family: monospace;
             background-color: #f8f9fa;
@@ -272,27 +298,32 @@ def create_html_page(records, output_path):
             overflow-y: auto;
             font-size: 0.9rem;
             line-height: 1.5;
-        }
+        }}
         
-        @media (max-width: 768px) {
-            .content {
+        @media (max-width: 768px) {{
+            .content {{
                 flex-direction: column;
-            }
-            .file-list, .detail-view {
+            }}
+            .file-list, .detail-view {{
                 width: 100%;
                 height: 50vh;
-            }
-            .file-list {
+            }}
+            .file-list {{
                 border-right: none;
                 border-bottom: 1px solid #ddd;
-            }
-        }
+            }}
+        }}
     </style>
 </head>
 <body>
     <header>
-        <img src="html/Logo.png" alt="Medical Records" class="logo">
-        <h1>Medical Records Viewer</h1>
+        <div class="header-main">
+            <img src="html/Logo.png" alt="Medical Records" class="logo">
+            <h1>Medical Records Viewer</h1>
+        </div>
+        <div class="header-info">
+            <strong>Files Location:</strong> <code>{output_dir}</code>
+        </div>
     </header>
     
     <div class="content">

@@ -511,10 +511,9 @@ def main():
             logging.warning("No records to process")
             return
         
-        # Convert to DataFrame and process through AI
+        # Convert to DataFrame
         logging.info("Processing records through AI")
         records_df = pd.DataFrame(records)
-        records_df = batch_process_medical_records(records_df, config, openai_api_key)
         
         # Create filenames and copy files
         output_location = config['output_location']
