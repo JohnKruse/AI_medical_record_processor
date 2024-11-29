@@ -6,7 +6,7 @@ skip_process_review_interval: 180  # Time in Days
 scans_location: '/path/to/input/scans'  # Directory containing medical record scans
 output_location: '/path/to/output'      # Directory for processed output
 output_html: 'medical_records_output.html'  # Name of the main output HTML file
-filename_format: '{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
+filename_format: '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
 
 # OCR Configuration
 ocr_language: 'eng'  # Language(s) for OCR, use '+' to combine multiple (e.g., 'eng+ita')
@@ -29,6 +29,19 @@ ai_processing:
     parameters:
       type: "object"
       properties:
+        patient:
+          type: "object"
+          description: "Information about the patient"
+          properties:
+            first_name:
+              type: "string"
+              description: "Patient's first name"
+            middle_name:
+              type: "string"
+              description: "Patient's middle name (if available)"
+            last_name:
+              type: "string"
+              description: "Patient's last name"
         summary:
           type: "string"
           description: "A concise paragraph summarizing the medical examination or appointment"
@@ -92,4 +105,4 @@ ai_processing:
                 type: "string"
                 description: "How often to take the medication"
             required: ["name"]
-      required: ["summary", "visit_type", "provider", "primary_condition", "diagnoses", "treatments", "treatment_date"]
+      required: ["summary", "visit_type", "provider", "primary_condition", "diagnoses", "treatments", "treatment_date", "patient"]

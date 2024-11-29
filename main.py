@@ -227,7 +227,10 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
         'test_results': [],
         'treatment_date': None,
         'ai_treatment_date': None,  # New column for AI-extracted date
-        'last_processed': current_datetime  # New column for processing timestamp
+        'last_processed': current_datetime,  # New column for processing timestamp
+        'patient_first_name': '',  # Add patient columns
+        'patient_middle_name': '',
+        'patient_last_name': ''
     }
     
     # Initialize new columns with default values if they don't exist
@@ -301,6 +304,12 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     provider = parsed_response.get('provider', {})
                     records_df.at[index, 'provider_name'] = provider.get('name', '')
                     records_df.at[index, 'provider_facility'] = provider.get('facility', '')
+                    
+                    # Store patient information
+                    patient = parsed_response.get('patient', {})
+                    records_df.at[index, 'patient_first_name'] = patient.get('first_name', '')
+                    records_df.at[index, 'patient_middle_name'] = patient.get('middle_name', '')
+                    records_df.at[index, 'patient_last_name'] = patient.get('last_name', '')
                     
                     # Store AI-extracted treatment date
                     ai_date = parsed_response.get('treatment_date', '')
@@ -378,6 +387,12 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     provider = parsed_response.get('provider', {})
                     records_df.at[index, 'provider_name'] = provider.get('name', '')
                     records_df.at[index, 'provider_facility'] = provider.get('facility', '')
+                    
+                    # Store patient information
+                    patient = parsed_response.get('patient', {})
+                    records_df.at[index, 'patient_first_name'] = patient.get('first_name', '')
+                    records_df.at[index, 'patient_middle_name'] = patient.get('middle_name', '')
+                    records_df.at[index, 'patient_last_name'] = patient.get('last_name', '')
                     
                     # Store AI-extracted treatment date
                     ai_date = parsed_response.get('treatment_date', '')
@@ -511,10 +526,9 @@ def main():
             logging.warning("No records to process")
             return
         
-        # Convert to DataFrame and process through AI
+        # Convert to DataFrame
         logging.info("Processing records through AI")
         records_df = pd.DataFrame(records)
-        records_df = batch_process_medical_records(records_df, config, openai_api_key)
         
         # Create filenames and copy files
         output_location = config['output_location']
