@@ -205,6 +205,13 @@ def get_next_sequence_number(output_dir, date_str):
     logging.info(f"Next sequence number for {date_str}: {next_seq:03d}")
     return next_seq
 
+def to_title_case(text):
+    """Convert text to Title Case, handling empty or None values."""
+    if not text:
+        return text
+    # Split on spaces and capitalize each word
+    return ' '.join(word.capitalize() for word in text.strip().split())
+
 def create_new_filename(metadata, record_data, config):
     """Create a new filename based on treatment date, visit type, and provider name."""
     # Get treatment date
@@ -221,6 +228,15 @@ def create_new_filename(metadata, record_data, config):
     provider_name_last = provider_name.split()[-1] if provider_name else 'unknown'
     provider_name_last = provider_name_last.lower()
     
+    # Get patient information and convert to Title Case
+    first_name = to_title_case(record_data.get('patient_first_name', ''))
+    middle_name = to_title_case(record_data.get('patient_middle_name', ''))
+    patient_last = to_title_case(record_data.get('patient_last_name', 'unknown')).strip()
+    
+    # Create patient initials from first letters of first and middle names
+    initials = (first_name[:1] + middle_name[:1]).strip()
+    patient_initials = initials if initials else 'XX'
+    
     # Get the output directory from config
     output_dir = config['output_location']
     
@@ -228,8 +244,10 @@ def create_new_filename(metadata, record_data, config):
     seq_num = get_next_sequence_number(output_dir, treatment_date)
     
     # Format the filename
-    filename_format = config.get('filename_format', '{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}')
+    filename_format = config.get('filename_format', '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}')
     new_filename = filename_format.format(
+        patient_last=patient_last,
+        patient_initials=patient_initials,
         treatment_date=treatment_date,
         visit_type=visit_type,
         provider_name_last=provider_name_last,
