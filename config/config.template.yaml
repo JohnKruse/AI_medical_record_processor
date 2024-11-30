@@ -1,57 +1,61 @@
 # Processing Configuration
-skip_processed_files: False
-skip_process_review_interval: 180  # Time in Days
+skip_processed_files: False # Use sparingly as it won't update existing files
+skip_process_review_interval: 180 # Time in Days
+
+# Language Configuration
+output_language: 'es'  # Language for output text (e.g., 'en' for English, 'es' for Spanish)
 
 # File Locations
-scans_location: '/path/to/input/scans'  # Directory containing medical record scans
-output_location: '/path/to/output'      # Directory for processed output
+scans_location: '/path/to/scans/directory'  # Directory containing medical record scans
+output_location: '/path/to/output/directory'      # Directory for processed output
 output_html: 'medical_records_output.html'  # Name of the main output HTML file
 filename_format: '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
 
 # OCR Configuration
-ocr_language: 'eng'  # Language(s) for OCR, use '+' to combine multiple (e.g., 'eng+ita')
+ocr_language: 'eng'  # Add additional languages with + separator (e.g., 'eng+spa')
 processed_checksums_file: 'processed_files.json'  # File to track processed documents
 
 # AI Processing Configuration
 ai_processing:
-  model_name: 'gpt-4o-mini'  # OpenAI model to use e.g., 'gpt-4o-mini'
+  model_name: 'gpt-4'  # OpenAI model to use e.g., 'gpt-4'
   role_prompt: >
-    You are an expert medical records analyst. Your task is to extract structured information 
-    from medical records. Analyze the provided text and return information in the specified format. 
-    If there is not enough information from which to draw conclusions, just return "Not enough information".
+    You are an expert ${output_language} translator and medical records analyst. Your task is to extract structured information 
+    from medical records. Analyze the provided text and return information in the specified format.
+    IMPORTANT: The patient only speaks ${output_language}. Provide all your responses in ${output_language}. 
+    If there is not enough information from which to draw conclusions, return "Not enough information" in the appropriate language.
   max_tokens: 10000
   temperature: 0.1
   
   # Function schema for structured responses
   function_schema:
     name: "analyze_medical_record"
-    description: "Analyzes medical records to extract key information"
+    description: "Analyzes medical records to extract key information and provide results in ${output_language}"
     parameters:
       type: "object"
       properties:
         patient:
           type: "object"
-          description: "Information about the patient"
+          description: "Information about the patient (provide in ${output_language})"
           properties:
             first_name:
               type: "string"
-              description: "Patient's first name"
+              description: "Patient's first name (preserve original spelling)"
             middle_name:
               type: "string"
-              description: "Patient's middle name (if available)"
+              description: "Patient's middle name if available (preserve original spelling)"
             last_name:
               type: "string"
-              description: "Patient's last name"
+              description: "Patient's last name (preserve original spelling)"
         summary:
           type: "string"
-          description: "A concise paragraph summarizing the medical examination or appointment"
+          description: "A comprehensive summary in ${output_language} of the medical examination or appointment. This should be detailed but concise, highlighting central and/or unusual findings."
         treatment_date:
           type: "string"
           format: "date"
           description: "The date of the medical visit or treatment in YYYY-MM-DD format"
         visit_type:
           type: "string"
-          description: "The type of medical visit or specialty (e.g., ophthalmology, nephrology, gastroenterology)"
+          description: "The type of medical visit or specialty (e.g., ophthalmology, nephrology, gastroenterology) in ${output_language}"
         provider:
           type: "object"
           description: "Information about the healthcare provider"
@@ -65,30 +69,30 @@ ai_processing:
           required: ["facility"]
         primary_condition:
           type: "string"
-          description: "The main medical condition being discussed"
+          description: "The main medical condition being discussed in ${output_language} (and the original in parentheses if there is a translation)"
         diagnoses:
           type: "array"
           items:
             type: "string"
-          description: "List of diagnoses mentioned in the record"
+          description: "List of diagnoses mentioned in the record in ${output_language} (and the original in parentheses if there is a translation)"
         treatments:
           type: "array"
           items:
             type: "string"
-          description: "List of recommended treatments or next steps"
+          description: "List of recommended treatments or next steps in ${output_language} (and the original in parentheses if there is a translation)"
         test_results:
           type: "object"
-          description: "Significant test results or measurements"
+          description: "Significant test results or measurements maintaining original spelling"
           properties:
             name:
               type: "string"
-              description: "Name of the test"
+              description: "Name of the test in ${output_language} (and the original in parentheses if there is a translation)"
             value:
               type: "string"
-              description: "Test result or measurement value"
+              description: "Test result or measurement value in ${output_language} (and the original in parentheses if there is a translation)"
             interpretation:
               type: "string"
-              description: "Clinical interpretation of the result"
+              description: "Clinical interpretation of the result in ${output_language} (and the original in parentheses if there is a translation)"
           required: ["name", "value"]
         medications:
           type: "array"
@@ -97,12 +101,12 @@ ai_processing:
             properties:
               name:
                 type: "string"
-                description: "Name of the medication"
+                description: "Name of the medication (maintain original spelling)"
               dosage:
                 type: "string"
-                description: "Prescribed dosage"
+                description: "Prescribed dosage (maintain original spelling)"
               frequency:
                 type: "string"
-                description: "How often to take the medication"
+                description: "How often to take the medication in ${output_language} (and the original in parentheses if there is a translation)"
             required: ["name"]
-      required: ["summary", "visit_type", "provider", "primary_condition", "diagnoses", "treatments", "treatment_date", "patient"]
+      required: ["summary", "visit_type", "provider", "primary_condition", "patient", "diagnoses", "treatments", "treatment_date"]
