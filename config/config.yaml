@@ -1,6 +1,8 @@
 skip_processed_files: False # Use sparingly as it won't update existing files
 skip_process_review_interval:  180 # Time in Days
-output_language: 'es'  # Language for output text (e.g., 'en' for English, 'es' for Spanish)
+# Language codes are determined by the translation files present in the translations/ directory
+# Each language requires a corresponding [lang_code].json file with a "language_name" field
+output_language: 'en'  # Language for output text (e.g., 'en' for English, 'es' for Spanish)
 
 # File Locations
 scans_location: '/Users/john/Downloads/Kruse_WM_2024_growth_review/scans'

@@ -1,0 +1,38 @@
+{
+    "language_name": "Spanish",
+    "language_metadata": {
+        "code": "es",
+        "name_in_english": "Spanish",
+        "name_in_native": "Español"
+    },
+    "page_title": "Visor de Registros Médicos",
+    "actions": {
+        "print": "Imprimir",
+        "view_original": "Ver Original"
+    },
+    "fields": {
+        "treatment_date": "Fecha de Tratamiento",
+        "treatment_date_regex": "Fecha de Tratamiento (Regex)",
+        "treatment_date_ai": "Fecha de Tratamiento (IA)",
+        "visit_type": "Tipo de Visita",
+        "provider_name": "Nombre del Proveedor",
+        "provider_facility": "Centro Médico",
+        "primary_condition": "Condición Principal",
+        "diagnoses": "Diagnósticos",
+        "treatments": "Tratamientos",
+        "medications": "Medicamentos",
+        "test_results": "Resultados de Pruebas",
+        "summary": "Resumen",
+        "last_processed": "Último Procesamiento",
+        "raw_text": "Texto Extraído"
+    },
+    "navigation": {
+        "previous": "Anterior",
+        "next": "Siguiente"
+    },
+    "status": {
+        "not_available": "N/D",
+        "processing": "Procesando...",
+        "error": "Error"
+    }
+}

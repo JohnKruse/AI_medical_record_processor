@@ -1,0 +1,38 @@
+{
+    "language_name": "Italian",
+    "language_metadata": {
+        "code": "it",
+        "name_in_english": "Italian",
+        "name_in_native": "Italiano"
+    },
+    "page_title": "Visualizzatore Cartelle Cliniche",
+    "actions": {
+        "print": "Stampa",
+        "view_original": "Visualizza Originale"
+    },
+    "fields": {
+        "treatment_date": "Data Trattamento",
+        "treatment_date_regex": "Data Trattamento (Regex)",
+        "treatment_date_ai": "Data Trattamento (AI)",
+        "visit_type": "Tipo Visita",
+        "provider_name": "Nome Medico",
+        "provider_facility": "Struttura Sanitaria",
+        "primary_condition": "Condizione Principale",
+        "diagnoses": "Diagnosi",
+        "treatments": "Trattamenti",
+        "medications": "Farmaci",
+        "test_results": "Risultati Esami",
+        "summary": "Riepilogo",
+        "last_processed": "Ultima Elaborazione",
+        "raw_text": "Testo Estratto"
+    },
+    "navigation": {
+        "previous": "Precedente",
+        "next": "Successivo"
+    },
+    "status": {
+        "not_available": "N/D",
+        "processing": "In Elaborazione...",
+        "error": "Errore"
+    }
+}
