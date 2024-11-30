@@ -1,0 +1,38 @@
+{
+    "language_name": "German",
+    "language_metadata": {
+        "code": "de",
+        "name_in_english": "German",
+        "name_in_native": "Deutsch"
+    },
+    "page_title": "Medizinische Akten Viewer",
+    "actions": {
+        "print": "Drucken",
+        "view_original": "Original anzeigen"
+    },
+    "fields": {
+        "treatment_date": "Behandlungsdatum",
+        "treatment_date_regex": "Behandlungsdatum (Regex)",
+        "treatment_date_ai": "Behandlungsdatum (KI)",
+        "visit_type": "Besuchsart",
+        "provider_name": "Name des Arztes",
+        "provider_facility": "Medizinische Einrichtung",
+        "primary_condition": "Hauptzustand",
+        "diagnoses": "Diagnosen",
+        "treatments": "Behandlungen",
+        "medications": "Medikamente",
+        "test_results": "Testergebnisse",
+        "summary": "Zusammenfassung",
+        "last_processed": "Zuletzt Verarbeitet",
+        "raw_text": "Extrahierter Text"
+    },
+    "navigation": {
+        "previous": "Vorherige",
+        "next": "Nächste"
+    },
+    "status": {
+        "not_available": "N/V",
+        "processing": "Verarbeitung...",
+        "error": "Fehler"
+    }
+}

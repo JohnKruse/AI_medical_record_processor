@@ -1,0 +1,38 @@
+{
+    "language_name": "English",
+    "language_metadata": {
+        "code": "en",
+        "name_in_english": "English",
+        "name_in_native": "English"
+    },
+    "page_title": "Medical Records Viewer",
+    "actions": {
+        "print": "Print",
+        "view_original": "View Original"
+    },
+    "fields": {
+        "treatment_date": "Treatment Date",
+        "treatment_date_regex": "Treatment Date (Regex)",
+        "treatment_date_ai": "Treatment Date (AI)",
+        "visit_type": "Visit Type",
+        "provider_name": "Provider Name",
+        "provider_facility": "Provider Facility",
+        "primary_condition": "Primary Condition",
+        "diagnoses": "Diagnoses",
+        "treatments": "Treatments",
+        "medications": "Medications",
+        "test_results": "Test Results",
+        "summary": "Summary",
+        "last_processed": "Last Processed",
+        "raw_text": "Raw Extracted Text"
+    },
+    "navigation": {
+        "previous": "Previous",
+        "next": "Next"
+    },
+    "status": {
+        "not_available": "N/A",
+        "processing": "Processing...",
+        "error": "Error"
+    }
+}
