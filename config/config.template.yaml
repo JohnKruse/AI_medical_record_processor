@@ -19,7 +19,7 @@ ocr_language: 'eng+ita' # Add additional languages with + separator (e.g., 'eng+
 
 # AI Processing Configuration
 ai_processing:
-  model_name: 'gpt-4'  # OpenAI model to use e.g., 'gpt-4'
+  model_name: 'gpt-4o-mini'  # OpenAI model to use e.g., 'gpt-4'
   role_prompt: >
     You are an expert ${output_language} translator and medical records analyst. Your task is to extract structured information 
     from medical records. Analyze the provided text and return information in the specified format.

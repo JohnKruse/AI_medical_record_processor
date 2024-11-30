@@ -3,19 +3,18 @@ skip_process_review_interval:  180 # Time in Days
 # Language codes are determined by the translation files present in the translations/ directory
 # Each language requires a corresponding [lang_code].json file with a "language_name" field
 output_language: 'en'  # Language for output text (e.g., 'en' for English, 'es' for Spanish)
+ocr_language: 'eng+ita' # Add additional languages with + separator (e.g., 'eng+spa') These correspond with the Tesseract language codes (https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)
 
 # File Locations
-scans_location: '/Users/john/Downloads/Kruse_WM_2024_growth_review/scans'
-output_location: '/Users/john/Downloads/Kruse_WM_2024_growth_review'
-output_html: 'medical_records_Kruse_WM_2024_growth_review.html'
+scans_location: '/Users/john/Downloads/medical_records_output/scans'
+output_location: '/Users/john/Downloads/medical_records_output'
+output_html: 'medical_records_Test.html'
 filename_format: '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
-
-ocr_language: 'eng+ita'
 processed_checksums_file: 'processed_files.json'
 
 # AI Processing Configuration
 ai_processing:
-  model_name: 'gpt-4o-mini'
+  model_name: 'gpt-4o-mini'  # OpenAI model to use
   role_prompt: >
     You are an expert ${output_language} translator and medical records analyst. Your task is to extract structured information 
     from medical records. Analyze the provided text and return information in the dspecified format.
@@ -54,7 +53,7 @@ ai_processing:
           description: "The date of the medical visit or treatment in YYYY-MM-DD format"
         visit_type:
           type: "string"
-          description: "The type of medical visit or specialty (e.g., ophthalmology, nephrology, gastroenterology) in ${output_language}"
+          description: "The type of medical visit or specialty (e.g., ophthalmology, nephrology, gastroenterology) in the original language"
         provider:
           type: "object"
           description: "Information about the healthcare provider"
