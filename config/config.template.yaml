@@ -5,17 +5,17 @@ skip_process_review_interval: 180 # Time in Days
 # Language Configuration
 # Language codes are determined by the translation files present in the translations/ directory
 # Each language requires a corresponding [lang_code].json file with a "language_name" field
-output_language: 'es'  # Language for output text (e.g., 'en' for English, 'es' for Spanish)
+output_language: 'en'  # Language for output text (e.g., 'en' for English, 'es' for Spanish)
 
 # File Locations
 scans_location: '/path/to/scans/directory'  # Directory containing medical record scans
 output_location: '/path/to/output/directory'      # Directory for processed output
 output_html: 'medical_records_output.html'  # Name of the main output HTML file
 filename_format: '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
+processed_checksums_file: 'processed_files.json'  # File to track processed documents
 
 # OCR Configuration
-ocr_language: 'eng'  # Add additional languages with + separator (e.g., 'eng+spa')
-processed_checksums_file: 'processed_files.json'  # File to track processed documents
+ocr_language: 'eng+ita' # Add additional languages with + separator (e.g., 'eng+spa') These correspond with the Tesseract language codes (https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)
 
 # AI Processing Configuration
 ai_processing:
@@ -57,7 +57,7 @@ ai_processing:
           description: "The date of the medical visit or treatment in YYYY-MM-DD format"
         visit_type:
           type: "string"
-          description: "The type of medical visit or specialty (e.g., ophthalmology, nephrology, gastroenterology) in ${output_language}"
+          description: "The type of medical visit or specialty (e.g., ophthalmology, nephrology, gastroenterology) in the original language"
         provider:
           type: "object"
           description: "Information about the healthcare provider"
