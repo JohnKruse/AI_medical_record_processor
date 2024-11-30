@@ -6,6 +6,9 @@ skip_process_review_interval: 180 # Time in Days
 # Language codes are determined by the translation files present in the translations/ directory
 # Each language requires a corresponding [lang_code].json file with a "language_name" field
 output_language: 'en'  # Language for output text (e.g., 'en' for English, 'es' for Spanish)
+# OCR Configuration
+ocr_language: 'eng+ita' # Add additional languages with + separator (e.g., 'eng+spa') These correspond with the Tesseract language codes (https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)
+
 
 # File Locations
 scans_location: '/path/to/scans/directory'  # Directory containing medical record scans
@@ -14,8 +17,6 @@ output_html: 'medical_records_output.html'  # Name of the main output HTML file
 filename_format: '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
 processed_checksums_file: 'processed_files.json'  # File to track processed documents
 
-# OCR Configuration
-ocr_language: 'eng+ita' # Add additional languages with + separator (e.g., 'eng+spa') These correspond with the Tesseract language codes (https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)
 
 # AI Processing Configuration
 ai_processing:
