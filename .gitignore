@@ -40,6 +40,10 @@ wheels/
 processed_files.json
 output/
 scans/
+project.md
+
+# Project notes
+git_ignore/project.md
 
 # Virtual Environment
 venv/
