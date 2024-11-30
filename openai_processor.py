@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 from typing import Dict, List, Optional, Union
 from ai_utils import query_openai_gptX_with_schema
+from translations.translation_utils import Translator
 
 def process_medical_records_with_gpt(
     records_df: pd.DataFrame,
@@ -28,6 +29,18 @@ def process_medical_records_with_gpt(
     Returns:
         DataFrame with processed records including GPT analysis
     """
+    # Initialize translator
+    translator = Translator(os.path.join(os.path.dirname(__file__), 'translations'))
+    
+    # Get output language and its full name for logging
+    output_language = config.get('output_language', 'en')
+    language_name = translator.get_language_name(output_language)
+    logging.info(f"Processing with language: {language_name}")
+    
+    # Get role prompt (already has language substitutions from config loading)
+    role_prompt = config['ai_processing']['role_prompt']
+    logging.info(f"Using role prompt: {role_prompt}")
+    
     # Ensure required columns exist
     if 'Processed' not in records_df.columns:
         records_df['Processed'] = False
@@ -52,6 +65,20 @@ def process_medical_records_with_gpt(
                 file_path = row.get('file_path', '')
                 if file_path and os.path.exists(file_path) and file_path.lower().endswith('.pdf'):
                     logging.info(f"Sending PDF file directly to GPT: {file_path}")
+                    # Log all parameters
+                    logging.info("query_openai_gptX_with_schema parameters:")
+                    logging.info({
+                        "text": None,
+                        "questions": questions,
+                        "role_prompt": role_prompt,
+                        "model_name": model_name,
+                        "api_key": "*" * 10,
+                        "file_path": file_path,
+                        "function_schema": config.get('ai_processing', {}).get('function_schema'),
+                        "max_tokens": config.get('ai_processing', {}).get('max_tokens', 2000),
+                        "temperature": config.get('ai_processing', {}).get('temperature', 0.3)
+                    })
+                    
                     response = query_openai_gptX_with_schema(
                         text=None,
                         questions=questions,
@@ -59,15 +86,29 @@ def process_medical_records_with_gpt(
                         model_name=model_name,
                         api_key=api_key,
                         file_path=file_path,
-                        function_schema=None,
-                        max_tokens=3000,
-                        temperature=0.1
+                        function_schema=config.get('ai_processing', {}).get('function_schema'),
+                        max_tokens=config.get('ai_processing', {}).get('max_tokens', 2000),
+                        temperature=config.get('ai_processing', {}).get('temperature', 0.3)
                     )
                 else:
                     raise ValueError(f"PDF file not found or invalid: {file_path}")
             else:
+                # Log all parameters
+                logging.info("query_openai_gptX_with_schema parameters:")
+                logging.info({
+                    "text": text,
+                    "questions": questions,
+                    "role_prompt": role_prompt,
+                    "model_name": model_name,
+                    "api_key": "*" * 10,
+                    "file_path": None,
+                    "function_schema": config.get('ai_processing', {}).get('function_schema'),
+                    "max_tokens": config.get('ai_processing', {}).get('max_tokens', 2000),
+                    "temperature": config.get('ai_processing', {}).get('temperature', 0.3)
+                })
+                
                 # Process normally with extracted text
-                logging.info(f"Sending to GPT: {text[:100]}...")
+                logging.info("Sending to GPT...")
                 response = query_openai_gptX_with_schema(
                     text=text,
                     questions=questions,
@@ -75,9 +116,9 @@ def process_medical_records_with_gpt(
                     model_name=model_name,
                     api_key=api_key,
                     file_path=None,
-                    function_schema=None,
-                    max_tokens=3000,
-                    temperature=0.1
+                    function_schema=config.get('ai_processing', {}).get('function_schema'),
+                    max_tokens=config.get('ai_processing', {}).get('max_tokens', 2000),
+                    temperature=config.get('ai_processing', {}).get('temperature', 0.3)
                 )
             
             # Process the GPT response
@@ -129,7 +170,7 @@ def batch_process_medical_records(
         raise ValueError("OpenAI API key not found in config")
         
     model_name = config.get('model_name', 'gpt-4')
-    role_prompt = config.get('role_prompt', 'You are a medical records analyst.')
+    role_prompt = config.get('ai_processing', {}).get('role_prompt', 'You are a medical records analyst.')
     default_questions = config.get('analysis_questions', [
         "What is the primary medical condition discussed?",
         "What are the key findings or diagnoses?",

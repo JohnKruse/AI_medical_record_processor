@@ -21,7 +21,15 @@ def extract_text(file_path):
         return None
 
 def query_openai_gptX_with_schema(text, questions, role_prompt, model_name, api_key, file_path=None, function_schema=None, max_tokens=2000, temperature=0.3):
-    logging.info("Starting query_openai_gptX_with_schema function.")
+    logging.info(f"Starting query_openai_gptX_with_schema function with text: {text[:80]}...")
+    logging.info(f"Questions: {questions[:80]}...")
+    logging.info(f"Role prompt: {role_prompt[:80]}...")
+    logging.info(f"Model name: {model_name}")
+    logging.info(f"API key: {api_key[:10]}...")
+    logging.info(f"File path: {file_path}")
+    logging.info(f"Function schema: {function_schema}")
+    logging.info(f"Max tokens: {max_tokens}")
+    logging.info(f"Temperature: {temperature}")
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",

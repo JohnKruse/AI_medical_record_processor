@@ -7,6 +7,7 @@ from datetime import datetime as dt  # Renaming the import to avoid conflicts
 from typing import Dict, Any  # Importing Dict and Any for type hinting
 import json  # Add this at the top with other imports
 import pandas as pd
+from translator import Translator
 import shutil
 
 # Import custom utilities
@@ -50,6 +51,33 @@ def setup_logging():
     logging.info("=" * 80)
     logging.info("Starting medical records processing")
 
+def substitute_config_variables(config_dict, translator=None):
+    """
+    Recursively process all strings in config dictionary and substitute variables.
+    Currently handles ${output_language} substitution.
+    """
+    if not isinstance(config_dict, dict):
+        return config_dict
+        
+    # Initialize translator if not provided
+    if translator is None:
+        translator = Translator(os.path.join(os.path.dirname(__file__), 'translations'))
+    
+    # Get language name for substitution
+    output_language = config_dict.get('output_language', 'en')
+    language_name = translator.get_language_name(output_language)
+    
+    def _substitute_in_value(value):
+        if isinstance(value, str):
+            return value.replace('${output_language}', language_name)
+        elif isinstance(value, dict):
+            return {k: _substitute_in_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [_substitute_in_value(item) for item in value]
+        return value
+    
+    return {k: _substitute_in_value(v) for k, v in config_dict.items()}
+
 def load_config(config_path):
     """Load configuration from YAML file."""
     if not os.path.exists(config_path):
@@ -63,8 +91,16 @@ def load_config(config_path):
         if isinstance(config['skip_processed_files'], str):
             config['skip_processed_files'] = config['skip_processed_files'].lower() == 'true'
     
+    # Substitute variables in config
+    config = substitute_config_variables(config)
+    
     logging.info(f"Loaded configuration from {config_path}")
     logging.info(f"Skip processed files: {config['skip_processed_files']} (type: {type(config['skip_processed_files'])})")
+    
+    # Log the substituted role prompt
+    if 'ai_processing' in config and 'role_prompt' in config['ai_processing']:
+        logging.info(f"Role prompt after substitution: {config['ai_processing']['role_prompt']}")
+    
     return config
 
 def ensure_directories(config):
