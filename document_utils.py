@@ -389,8 +389,23 @@ def create_html_page(records, output_path, overall_summary=None):
         const records = {json.dumps(sorted_records)};
         let currentIndex = -1;
         
+        // Format lists for display
+        function formatList(items) {{
+            if (!items) return 'N/A';
+            if (typeof items === 'string') return items;
+            if (Array.isArray(items)) return items.join(', ') || 'N/A';
+            return 'N/A';
+        }}
+        
         // Show record details
         function showRecord(index) {{
+            // Update active state in file list
+            document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
+            const activeItem = document.querySelector(`[data-index="${{index}}"]`);
+            if (activeItem) {{
+                activeItem.classList.add('active');
+            }}
+            
             if (index === -1) {{
                 // Show overall summary
                 const summaryHtml = '<div class="record-details">' +
@@ -402,18 +417,6 @@ def create_html_page(records, output_path, overall_summary=None):
             }} else if (index >= 0 && index < records.length) {{
                 currentIndex = index;
                 const record = records[index];
-                
-                // Update active state in file list
-                document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
-                document.querySelector(`[data-index="${index}"]`).classList.add('active');
-                
-                // Format lists for display
-                function formatList(items) {{
-                    if (!items) return 'N/A';
-                    if (typeof items === 'string') return items;
-                    if (Array.isArray(items)) return items.join(', ') || 'N/A';
-                    return 'N/A';
-                }}
                 
                 // Update record details
                 const detailsHtml = 
@@ -444,17 +447,32 @@ def create_html_page(records, output_path, overall_summary=None):
                 
                 document.querySelector('.record-details').innerHTML = detailsHtml;
             }}
-            
-            // Navigation functions
-            function navigateUp() {{
-                if (currentIndex > 0) showRecord(currentIndex - 1);
+        }}
+        
+        // Navigation functions
+        function navigateUp() {{
+            if (currentIndex > -1) {{
+                showRecord(currentIndex - 1);
             }}
-            
-            function navigateDown() {{
-                if (currentIndex < records.length - 1) showRecord(currentIndex + 1);
+        }}
+        
+        function navigateDown() {{
+            if (currentIndex < records.length - 1) {{
+                showRecord(currentIndex + 1);
             }}
+        }}
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {{
+            // Add click listeners to file items
+            document.querySelectorAll('.file-item').forEach(item => {{
+                item.addEventListener('click', function() {{
+                    const index = parseInt(this.getAttribute('data-index'));
+                    showRecord(index);
+                }});
+            }});
             
-            // Event listeners
+            // Keyboard navigation
             document.addEventListener('keydown', function(e) {{
                 if (e.key === 'ArrowUp') {{
                     e.preventDefault();
@@ -465,15 +483,9 @@ def create_html_page(records, output_path, overall_summary=None):
                 }}
             }});
             
-            // Add click listeners to file items
-            document.querySelectorAll('.file-item').forEach(item => {{
-                item.addEventListener('click', function() {{
-                    showRecord(parseInt(this.getAttribute('data-index')));
-                }});
-            }});
-            
             // Show first record by default
-            if (records.length > 0) showRecord(0);
+            showRecord(-1);
+        }});
     </script>
 </body>
 </html>"""
