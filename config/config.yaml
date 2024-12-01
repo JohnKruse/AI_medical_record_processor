@@ -116,6 +116,8 @@ ai_overall_summary:
     You are an expert ${output_language} translator and medical records analyst. Your task is to review and summarize structured information 
     from medical records. Analyze the provided text and return information in the specified format.
     IMPORTANT: The patient only speaks ${output_language}. Provide all your responses in ${output_language}. 
+    You will generate distinct sections: Patient, Medical History, Summary, Key Findings, and Recommendations listings.
+    Keep them just text blocks at this point, but make sure they are in the target language with key terms in the original language.
   max_tokens: 10000
   temperature: 0.1
   # Function schema for structured responses
@@ -127,8 +129,37 @@ ai_overall_summary:
       properties:
         patient:
           type: "object"
-          description: "A general description of the patient in ${output_language}"
+          description: "A general description of the patient in ${output_language}. Include key information such as name, age, gender, and any relevant medical history."
+          properties:
+            section:
+              type: "string"
+              description: "Text block describing the patient in ${output_language}"
         medical_history:
-          type: "string"
+          type: "object"
           description: "An overview of the patient's medical history, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses"
-      required: ["patient", "medical_history"]
+          properties:
+            section:
+              type: "string"
+              description: "Text block describing the patient's visit and exam history in ${output_language} from the reviewed documents"
+        summary:
+          type: "object"
+          description: "A summary of the patient's medical history, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses. Use bolding and italics to highlight key findings."
+          properties:
+            section:
+              type: "string"
+              description: "Text block summarizing the patient's medical history in ${output_language}"
+        key_findings:
+          type: "object"
+          description: "A summary of the patient's key findings, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses"
+          properties:
+            section:
+              type: "string"
+              description: "Text block summarizing the patient's key findings in ${output_language}"
+        recommendations:
+          type: "object"
+          description: "A summary of the patient's recommended treatments or next steps in ${output_language} with key conditions/diagnoses in original language in parentheses. Use bolding and italics to highlight key findings."
+          properties:
+            section:
+              type: "string"
+              description: "Text block summarizing the patient's recommended treatments or next steps in ${output_language}"
+      required: ["patient", "medical_history", "summary", "key_findings", "recommendations"]
