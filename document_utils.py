@@ -97,23 +97,6 @@ def create_html_page(records, output_path, overall_summary=None):
     # Get the absolute path of the output directory
     output_dir = os.path.dirname(os.path.abspath(output_path))
     
-    # Create overall summary HTML if available
-    overall_summary_html = ""
-    if overall_summary:
-        overall_summary_html = f"""
-        <div class="overall-summary">
-            <h2>Patient Overview</h2>
-            <div class="summary-section">
-                <h3>Patient Description</h3>
-                <p>{overall_summary.get('patient', {}).get('description', 'No patient description available')}</p>
-            </div>
-            <div class="summary-section">
-                <h3>Medical History Overview</h3>
-                <p>{overall_summary.get('medical_history', 'No medical history available')}</p>
-            </div>
-        </div>
-        """
-    
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -377,7 +360,6 @@ def create_html_page(records, output_path, overall_summary=None):
         </div>
         <div class="detail-view">
             <div class="detail-view-content">
-                {overall_summary_html}
                 <div class="record-details">
                     <p>Select a record from the list to view details.</p>
                 </div>
@@ -387,6 +369,7 @@ def create_html_page(records, output_path, overall_summary=None):
     <script>
         // Initialize records data
         const records = {json.dumps(sorted_records)};
+        const overallSummary = {json.dumps(overall_summary) if overall_summary else 'null'};
         let currentIndex = -1;
         
         // Format lists for display
@@ -410,7 +393,14 @@ def create_html_page(records, output_path, overall_summary=None):
                 // Show overall summary
                 const summaryHtml = '<div class="record-details">' +
                     '<h2>Overall Summary</h2>' +
-                    '<p>This is a placeholder for the overall patient summary.</p>' +
+                    '<div class="summary-section">' +
+                        '<h3>Patient Description</h3>' +
+                        '<p>' + (overallSummary?.patient?.description || 'No patient description available') + '</p>' +
+                    '</div>' +
+                    '<div class="summary-section">' +
+                        '<h3>Medical History Overview</h3>' +
+                        '<p>' + (overallSummary?.medical_history || 'No medical history available') + '</p>' +
+                    '</div>' +
                 '</div>';
                 document.querySelector('.record-details').innerHTML = summaryHtml;
                 currentIndex = -1;
