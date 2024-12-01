@@ -395,11 +395,23 @@ def create_html_page(records, output_path, overall_summary=None):
                     '<h2>Overall Summary</h2>' +
                     '<div class="summary-section">' +
                         '<h3>Patient Description</h3>' +
-                        '<p>' + (overallSummary?.patient?.description || 'No patient description available') + '</p>' +
+                        '<p>' + (overallSummary?.patient?.section || 'No patient description available') + '</p>' +
                     '</div>' +
                     '<div class="summary-section">' +
-                        '<h3>Medical History Overview</h3>' +
-                        '<p>' + (overallSummary?.medical_history || 'No medical history available') + '</p>' +
+                        '<h3>Medical History</h3>' +
+                        '<p>' + (overallSummary?.medical_history?.section || 'No medical history available') + '</p>' +
+                    '</div>' +
+                    '<div class="summary-section">' +
+                        '<h3>Summary</h3>' +
+                        '<p>' + (overallSummary?.summary?.section || 'No summary available') + '</p>' +
+                    '</div>' +
+                    '<div class="summary-section">' +
+                        '<h3>Key Findings</h3>' +
+                        '<p>' + (overallSummary?.key_findings?.section || 'No key findings available') + '</p>' +
+                    '</div>' +
+                    '<div class="summary-section">' +
+                        '<h3>Recommendations</h3>' +
+                        '<p>' + (overallSummary?.recommendations?.section || 'No recommendations available') + '</p>' +
                     '</div>' +
                 '</div>';
                 document.querySelector('.record-details').innerHTML = summaryHtml;
