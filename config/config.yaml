@@ -108,3 +108,27 @@ ai_processing:
                 description: "How often to take the medication in ${output_language} (and the original in parentheses if there is a translation)"
             required: ["name"]
       required: ["summary", "visit_type", "provider", "primary_condition", "patient", "diagnoses", "treatments", "treatment_date"]
+
+# AI Overall Summary Configuration
+ai_overall_summary:
+  model_name: 'gpt-4o-mini'  # OpenAI model to use e.g., 'gpt-4'
+  role_prompt: >
+    You are an expert ${output_language} translator and medical records analyst. Your task is to review and summarize structured information 
+    from medical records. Analyze the provided text and return information in the specified format.
+    IMPORTANT: The patient only speaks ${output_language}. Provide all your responses in ${output_language}. 
+  max_tokens: 10000
+  temperature: 0.1
+  # Function schema for structured responses
+  function_schema:
+    name: "summarize_medical_record"
+    description: "Analyzes medical records to extract key information and provide results in ${output_language}"
+    parameters:
+      type: "object"
+      properties:
+        patient:
+          type: "object"
+          description: "A general description of the patient in ${output_language}"
+        medical_history:
+          type: "string"
+          description: "An overview of the patient's medical history, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses"
+      required: ["patient", "medical_history"]
