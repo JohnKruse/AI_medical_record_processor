@@ -361,15 +361,17 @@ def create_html_page(records, output_path, overall_summary=None):
             </div>
             <div class="file-list-content">
                 <ul>
-                    {
-                        ''.join([
-                            f'<li class="file-item" data-index="{i}">'
-                            f'<span class="number">{i + 1}.</span>'
-                            f'{record.get("new_filename", "Unnamed Record")}'
-                            f'</li>'
-                            for i, record in enumerate(sorted_records)
-                        ])
-                    }
+                    <li class="file-item" data-index="-1">
+                        <span class="number">1.</span>
+                        Overall Summary
+                    </li>
+                    {''.join([
+                        f'<li class="file-item" data-index="{i}">'
+                        f'<span class="number">{i + 2}.</span>'
+                        f'{record.get("new_filename", "Unnamed Record")}'
+                        f'</li>'
+                        for i, record in enumerate(sorted_records)
+                    ])}
                 </ul>
             </div>
         </div>
