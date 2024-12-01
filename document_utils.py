@@ -75,8 +75,14 @@ def create_detail_page(record, output_dir):
         f.write(html_content)
     return os.path.join('html', 'details', filename)
 
-def create_html_page(records, output_path):
-    """Create main HTML page with links to detail pages."""
+def create_html_page(records, output_path, overall_summary=None):
+    """Create main HTML page with links to detail pages.
+    
+    Args:
+        records: List of record dictionaries
+        output_path: Path to save the HTML file
+        overall_summary: Optional dictionary containing overall patient summary
+    """
     if not records:
         logging.warning("No records to create HTML page")
         return
@@ -90,6 +96,23 @@ def create_html_page(records, output_path):
     
     # Get the absolute path of the output directory
     output_dir = os.path.dirname(os.path.abspath(output_path))
+    
+    # Create overall summary HTML if available
+    overall_summary_html = ""
+    if overall_summary:
+        overall_summary_html = f"""
+        <div class="overall-summary">
+            <h2>Patient Overview</h2>
+            <div class="summary-section">
+                <h3>Patient Description</h3>
+                <p>{overall_summary.get('patient', {}).get('description', 'No patient description available')}</p>
+            </div>
+            <div class="summary-section">
+                <h3>Medical History Overview</h3>
+                <p>{overall_summary.get('medical_history', 'No medical history available')}</p>
+            </div>
+        </div>
+        """
     
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -238,6 +261,24 @@ def create_html_page(records, output_path):
             margin: 0 auto;
         }}
         
+        .overall-summary {{
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }}
+        
+        .summary-section {{
+            margin-top: 1.5rem;
+        }}
+        
+        .summary-section h3 {{
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }}
+        
         table {{
             width: 100%;
             border-collapse: collapse;
@@ -266,51 +307,42 @@ def create_html_page(records, output_path):
             align-items: center;
             gap: 0.5rem;
             padding: 0.5rem 1rem;
-            background: #3498db;
-            color: white;
-            border: none;
+            background: #fff;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            cursor: pointer;
+            color: #333;
             text-decoration: none;
             font-size: 0.9rem;
-            transition: opacity 0.2s;
+            cursor: pointer;
+            transition: all 0.2s;
         }}
         
         .btn:hover {{
-            opacity: 0.9;
+            background: #f8f9fa;
+            border-color: #ccc;
         }}
         
-        .record-title {{
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            color: #2c3e50;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #f0f2f5;
+        .btn-print svg {{
+            margin-right: 0.25rem;
         }}
         
-        .raw-text {{
-            white-space: pre-wrap;
-            font-family: monospace;
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 4px;
-            max-height: 400px;
-            overflow-y: auto;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }}
-        
-        @media (max-width: 768px) {{
-            .content {{
-                flex-direction: column;
+        @media print {{
+            body {{
+                overflow: visible;
+                display: block;
             }}
-            .file-list, .detail-view {{
+            
+            .file-list, .actions {{
+                display: none;
+            }}
+            
+            .detail-view {{
                 width: 100%;
-                height: 50vh;
+                overflow: visible;
             }}
-            .file-list {{
-                border-right: none;
-                border-bottom: 1px solid #ddd;
+            
+            .detail-view-content {{
+                overflow: visible;
             }}
         }}
     </style>
@@ -318,114 +350,136 @@ def create_html_page(records, output_path):
 <body>
     <header>
         <div class="header-main">
-            <img src="html/Logo.png" alt="Medical Records" class="logo">
+            <img src="html/Logo.png" alt="Logo" class="logo">
             <h1>Medical Records Viewer</h1>
         </div>
-        <div class="header-info">
-            <strong>Files Location:</strong> <code>{output_dir}</code>
-        </div>
     </header>
-    
     <div class="content">
         <div class="file-list">
-            <div class="file-list-header">Medical Records</div>
+            <div class="file-list-header">
+                Records ({len(sorted_records)})
+            </div>
             <div class="file-list-content">
-                <ul>"""
-    
-    # Add file list items with numbers
-    for i, record in enumerate(sorted_records, 1):
-        filename = record.get('new_filename', os.path.basename(record['file_path']))
-        html_content += f'\n                    <li data-index="{i-1}"><span class="number">#{i}</span>{filename}</li>'
-
-    html_content += """
+                <ul>
+                    {
+                        ''.join([
+                            f'<li class="file-item" data-index="{i}">'
+                            f'<span class="number">{i + 1}.</span>'
+                            f'{record.get("new_filename", "Unnamed Record")}'
+                            f'</li>'
+                            for i, record in enumerate(sorted_records)
+                        ])
+                    }
                 </ul>
             </div>
         </div>
         <div class="detail-view">
             <div class="detail-view-content">
-                <div id="record-details"></div>
+                {overall_summary_html}
+                <div class="record-details">
+                    <p>Select a record from the list to view details.</p>
+                </div>
             </div>
         </div>
     </div>
-
     <script>
-        const records = """ + json.dumps(sorted_records, indent=2) + """;
+        // Initialize records data
+        const records = {json.dumps(sorted_records)};
         let currentIndex = -1;
         
-        function showRecord(index) {
+        // Show record details
+        function showRecord(index) {{
             if (index < 0 || index >= records.length) return;
+            
             currentIndex = index;
-            
             const record = records[index];
-            const detailsHtml = `
-                <div class="record-details">
-                    <h2 class="record-title">${record.new_filename}</h2>
-                    <div class="actions">
-                        <button class="btn" onclick="window.print()">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
-                            </svg>
-                            Print
-                        </button>
-                        <a href="records/${record.new_filename}" target="_blank" class="btn">View Original</a>
-                    </div>
-                    <table>
-                        <tr><th>Treatment Date (Regex)</th><td>${record.treatment_date || 'N/A'}</td></tr>
-                        <tr><th>Treatment Date (AI)</th><td>${record.ai_treatment_date || 'N/A'}</td></tr>
-                        <tr><th>Visit Type</th><td>${record.visit_type || 'N/A'}</td></tr>
-                        <tr><th>Provider Name</th><td>${record.provider_name || 'N/A'}</td></tr>
-                        <tr><th>Provider Facility</th><td>${record.provider_facility || 'N/A'}</td></tr>
-                        <tr><th>Primary Condition</th><td>${record.primary_condition || 'N/A'}</td></tr>
-                        <tr><th>Diagnoses</th><td>${Array.isArray(record.diagnoses) ? record.diagnoses.join('; ') : (record.diagnoses || 'N/A')}</td></tr>
-                        <tr><th>Treatments</th><td>${Array.isArray(record.treatments) ? record.treatments.join('; ') : (record.treatments || 'N/A')}</td></tr>
-                        <tr><th>Medications</th><td>${Array.isArray(record.medications) ? record.medications.join('; ') : (record.medications || 'N/A')}</td></tr>
-                        <tr><th>Test Results</th><td>${Array.isArray(record.test_results) ? record.test_results.join('; ') : (record.test_results || 'N/A')}</td></tr>
-                        <tr><th>Summary</th><td>${record.summary || 'N/A'}</td></tr>
-                        <tr><th>Last Processed</th><td>${record.last_processed || 'N/A'}</td></tr>
-                        <tr>
-                            <th>Raw Extracted Text</th>
-                            <td><div class="raw-text">${record.text || 'N/A'}</div></td>
-                        </tr>
-                    </table>
-                </div>
-            `;
             
-            document.getElementById('record-details').innerHTML = detailsHtml;
+            // Update active state in file list
+            document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-index="${{index}}"]`).classList.add('active');
             
-            // Update active state
-            document.querySelectorAll('.file-list li').forEach(item => item.classList.remove('active'));
-            document.querySelector(`[data-index="${index}"]`).classList.add('active');
+            // Format lists for display
+            function formatList(items) {{
+                if (!items) return 'N/A';
+                if (typeof items === 'string') return items;
+                if (Array.isArray(items)) return items.join(', ') || 'N/A';
+                return 'N/A';
+            }}
             
-            // Scroll the active item into view in the file list
-            document.querySelector(`[data-index="${index}"]`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+            // Update record details
+            const detailsHtml = 
+                '<div class="actions">' +
+                    '<button class="btn btn-print" onclick="window.print()">' +
+                        '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">' +
+                            '<path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>' +
+                            '<path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>' +
+                        '</svg>' +
+                        'Print' +
+                    '</button>' +
+                    '<a href="records/' + record.new_filename + '" target="_blank" class="btn">View Original</a>' +
+                '</div>' +
+                '<table>' +
+                    '<tr><th>Treatment Date (Regex)</th><td>' + (record.treatment_date || 'N/A') + '</td></tr>' +
+                    '<tr><th>Treatment Date (AI)</th><td>' + (record.ai_treatment_date || 'N/A') + '</td></tr>' +
+                    '<tr><th>Visit Type</th><td>' + (record.visit_type || 'N/A') + '</td></tr>' +
+                    '<tr><th>Provider Name</th><td>' + (record.provider_name || 'N/A') + '</td></tr>' +
+                    '<tr><th>Provider Facility</th><td>' + (record.provider_facility || 'N/A') + '</td></tr>' +
+                    '<tr><th>Primary Condition</th><td>' + (record.primary_condition || 'N/A') + '</td></tr>' +
+                    '<tr><th>Diagnoses</th><td>' + formatList(record.diagnoses) + '</td></tr>' +
+                    '<tr><th>Treatments</th><td>' + formatList(record.treatments) + '</td></tr>' +
+                    '<tr><th>Medications</th><td>' + formatList(record.medications) + '</td></tr>' +
+                    '<tr><th>Test Results</th><td>' + formatList(record.test_results) + '</td></tr>' +
+                    '<tr><th>Summary</th><td>' + (record.summary || 'N/A') + '</td></tr>' +
+                    '<tr><th>Last Processed</th><td>' + (record.last_processed || 'N/A') + '</td></tr>' +
+                '</table>';
+            
+            document.querySelector('.record-details').innerHTML = detailsHtml;
+        }}
         
-        // Add click handlers
-        document.querySelectorAll('.file-list li').forEach((item, index) => {
-            item.addEventListener('click', () => showRecord(index));
-        });
+        // Navigation functions
+        function navigateUp() {{
+            if (currentIndex > 0) showRecord(currentIndex - 1);
+        }}
         
-        // Keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowUp' && currentIndex > 0) {
+        function navigateDown() {{
+            if (currentIndex < records.length - 1) showRecord(currentIndex + 1);
+        }}
+        
+        // Event listeners
+        document.addEventListener('keydown', function(e) {{
+            if (e.key === 'ArrowUp') {{
                 e.preventDefault();
-                showRecord(currentIndex - 1);
-            } else if (e.key === 'ArrowDown' && currentIndex < records.length - 1) {
+                navigateUp();
+            }} else if (e.key === 'ArrowDown') {{
                 e.preventDefault();
-                showRecord(currentIndex + 1);
-            }
-        });
+                navigateDown();
+            }}
+        }});
         
-        // Show first record
+        // Add click listeners to file items
+        document.querySelectorAll('.file-item').forEach(item => {{
+            item.addEventListener('click', function() {{
+                showRecord(parseInt(this.getAttribute('data-index')));
+            }});
+        }});
+        
+        // Show first record by default
         if (records.length > 0) showRecord(0);
     </script>
 </body>
 </html>"""
-
-    with open(output_path, 'w', encoding='utf-8') as file:
-        file.write(html_content)
-    logging.info(f"Created HTML summary page: {output_path}")
+    
+    # Write the HTML file
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    # Create detail pages directory
+    details_dir = os.path.join(output_dir, 'html', 'details')
+    os.makedirs(details_dir, exist_ok=True)
+    
+    # Create individual detail pages
+    for record in sorted_records:
+        create_detail_page(record, output_dir)
 
 def save_to_csv(records, csv_path):
     """Save extracted data and metadata to CSV file."""

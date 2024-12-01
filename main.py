@@ -478,6 +478,84 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
     print("\nAI analysis complete for all records")
     return records_df
 
+def generate_overall_summary(records_df: pd.DataFrame, config: Dict[str, Any], openai_api_key: str) -> Dict[str, Any]:
+    """Generate an overall summary of all medical records for a patient.
+    
+    Args:
+        records_df: DataFrame containing all processed medical records
+        config: Configuration dictionary containing AI settings
+        openai_api_key: OpenAI API key for making API calls
+        
+    Returns:
+        Dictionary containing the overall patient summary
+    """
+    logging.info("Generating overall medical history summary")
+    
+    # Sort records by treatment date
+    records_df = records_df.sort_values('treatment_date', ascending=True)
+    
+    # Prepare a comprehensive text of the patient's medical history
+    history_text = []
+    for _, record in records_df.iterrows():
+        visit_date = record.get('treatment_date', 'Unknown Date')
+        visit_type = record.get('visit_type', 'Unknown Visit Type')
+        provider = record.get('provider_name', 'Unknown Provider')
+        diagnoses = record.get('diagnoses', [])
+        treatments = record.get('treatments', [])
+        medications = record.get('medications', [])
+        summary = record.get('summary', '')
+        
+        visit_text = f"""
+        Date: {visit_date}
+        Visit Type: {visit_type}
+        Provider: {provider}
+        Diagnoses: {', '.join(diagnoses) if isinstance(diagnoses, list) else diagnoses}
+        Treatments: {', '.join(treatments) if isinstance(treatments, list) else treatments}
+        Medications: {', '.join(medications) if isinstance(medications, list) else medications}
+        Summary: {summary}
+        """
+        history_text.append(visit_text)
+    
+    combined_history = "\n\n".join(history_text)
+    
+    # Get AI configuration for overall summary
+    ai_config = config.get('ai_overall_summary', {})
+    model_name = ai_config.get('model_name', 'gpt-4o-mini')
+    role_prompt = ai_config.get('role_prompt', '')
+    max_tokens = ai_config.get('max_tokens', 10000)
+    temperature = ai_config.get('temperature', 0.1)
+    function_schema = ai_config.get('function_schema', {})
+    
+    # Create the analysis question
+    analysis_question = "Generate a comprehensive medical history summary based on all visits and records."
+    
+    # Process with AI API
+    try:
+        ai_response = query_openai_gptX_with_schema(
+            text=combined_history,
+            questions=[analysis_question],
+            role_prompt=role_prompt,
+            model_name=model_name,
+            api_key=openai_api_key,
+            file_path=None,
+            function_schema=function_schema,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        
+        # Parse response
+        response_text = ai_response.get(analysis_question, '{}')
+        summary_data = json.loads(response_text)
+        logging.info("Successfully generated overall medical history summary")
+        return summary_data
+        
+    except Exception as e:
+        logging.error(f"Error generating overall summary: {str(e)}")
+        return {
+            "patient": {"description": "Error generating patient description"},
+            "medical_history": "Error generating medical history summary"
+        }
+
 def ensure_output_location(config):
     """Set up the output location with proper subdirectories."""
     output_location = config['output_location']
@@ -602,15 +680,19 @@ def main():
             if col in csv_df.columns:
                 csv_df[col] = csv_df[col].apply(lambda x: '; '.join(x) if isinstance(x, list) else x)
         
+        # Generate overall summary before creating HTML
+        overall_summary = generate_overall_summary(records_df, config, openai_api_key)
+        logging.info("Generated overall patient summary")
+
         # Save CSV
         csv_path = os.path.join(output_location, 'data_files', 'extracted_data.csv')
         csv_df.to_csv(csv_path, index=False)
         logging.info(f"Saved data to CSV: {csv_path}")
         
-        # Generate HTML
+        # Generate HTML with overall summary
         output_html = config.get('output_html', 'output.html')
         output_html_path = os.path.join(output_location, output_html)
-        create_html_page(records_df.to_dict('records'), output_html_path)
+        create_html_page(records_df.to_dict('records'), output_html_path, overall_summary)
         logging.info(f"Created HTML output at: {output_html_path}")
         
         logging.info("Processing complete")
