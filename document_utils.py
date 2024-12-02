@@ -380,6 +380,15 @@ def create_html_page(records, output_path, overall_summary=None):
             return 'N/A';
         }}
         
+        // Helper function to format array sections
+        const formatArraySection = (array, listType = '') => {{
+            if (!array || !Array.isArray(array)) return 'No information available';
+            if (listType === 'bullet') {{
+                return '<ul>' + array.map(item => '<li>' + item + '</li>').join('') + '</ul>';
+            }}
+            return array.map(item => '<p>' + item + '</p>').join('');
+        }};
+        
         // Show record details
         function showRecord(index) {{
             // Update active state in file list
@@ -399,19 +408,19 @@ def create_html_page(records, output_path, overall_summary=None):
                     '</div>' +
                     '<div class="summary-section">' +
                         '<h3>Medical History</h3>' +
-                        '<p>' + (overallSummary?.medical_history?.section || 'No medical history available') + '</p>' +
+                        formatArraySection(overallSummary?.medical_history?.section, 'bullet') +
                     '</div>' +
                     '<div class="summary-section">' +
                         '<h3>Summary</h3>' +
-                        '<p>' + (overallSummary?.summary?.section || 'No summary available') + '</p>' +
+                        formatArraySection(overallSummary?.summary?.section) +
                     '</div>' +
                     '<div class="summary-section">' +
                         '<h3>Key Findings</h3>' +
-                        '<p>' + (overallSummary?.key_findings?.section || 'No key findings available') + '</p>' +
+                        formatArraySection(overallSummary?.key_findings?.section, 'bullet') +
                     '</div>' +
                     '<div class="summary-section">' +
                         '<h3>Recommendations</h3>' +
-                        '<p>' + (overallSummary?.recommendations?.section || 'No recommendations available') + '</p>' +
+                        formatArraySection(overallSummary?.recommendations?.section, 'bullet') +
                     '</div>' +
                 '</div>';
                 document.querySelector('.record-details').innerHTML = summaryHtml;

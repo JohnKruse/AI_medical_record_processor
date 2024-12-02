@@ -47,6 +47,9 @@ ai_processing:
         summary:
           type: "string"
           description: "A comprehensive summary in ${output_language} of the medical examination or appointment. This should be detailed but concise, highlighting central and/or unusual findings."
+        short_description:
+          type: "string"
+          description: "A short summary in ${output_language} of the medical examination or appointment. This should be 1-2 sentences highlighting the main points of the examination or event."
         treatment_date:
           type: "string"
           format: "date"
@@ -60,7 +63,7 @@ ai_processing:
           properties:
             name:
               type: "string"
-              description: "Surname of the doctor or provider, if available"
+              description: "Surname of the actual doctor or provider (usually the signatory, often not in the letterhead), if available. Preserve original spelling."
             facility:
               type: "string"
               description: "Name of the hospital or clinic"
@@ -139,27 +142,35 @@ ai_overall_summary:
           description: "An overview of the patient's medical history, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses"
           properties:
             section:
-              type: "string"
-              description: "Text block describing the patient's visit and exam history in ${output_language} from the reviewed documents"
+              type: "array"
+              items:
+                type: "string"
+              description: "Each block should be text describing the patient's medical history in ${output_language}. For each visit,treatment, or examination, the text block should start with: date, visit type, and provider followed by a newline. The remainder of the text block should contain a brief summary of the event in ${output_language} with key conditions/diagnoses in original language in parentheses"
         summary:
           type: "object"
-          description: "A summary of the patient's medical history, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses. Use bolding and italics to highlight key findings."
+          description: "A summary of the patient's medical history, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses"
           properties:
             section:
-              type: "string"
-              description: "Text block summarizing the patient's medical history in ${output_language}"
+              type: "array"
+              items:
+                type: "string"
+              description: "One or more bulleted summaries of the patient's medical history in ${output_language}. Each block should be a theme or issue with key findings."
         key_findings:
           type: "object"
           description: "A summary of the patient's key findings, including key medical conditions, diagnoses, treatments, medications, and test results in ${output_language} with key conditions/diagnoses in original language in parentheses"
           properties:
             section:
-              type: "string"
-              description: "Text block summarizing the patient's key findings in ${output_language}"
+              type: "array"
+              items:
+                type: "string"
+              description: "One or more bulleted summaries of the patient's key findings in ${output_language}"
         recommendations:
           type: "object"
-          description: "A summary of the patient's recommended treatments or next steps in ${output_language} with key conditions/diagnoses in original language in parentheses. Use bolding and italics to highlight key findings."
+          description: "A summary of the patient's recommended treatments or next steps in ${output_language} with key conditions/diagnoses in original language in parentheses"
           properties:
             section:
-              type: "string"
-              description: "Text block summarizing the patient's recommended treatments or next steps in ${output_language}"
+              type: "array"
+              items:
+                type: "string"
+              description: "One or more bulleted summaries of the patient's recommended treatments or next steps in ${output_language}"
       required: ["patient", "medical_history", "summary", "key_findings", "recommendations"]
