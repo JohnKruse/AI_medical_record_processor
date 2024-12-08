@@ -75,13 +75,14 @@ def create_detail_page(record, output_dir):
         f.write(html_content)
     return os.path.join('html', 'details', filename)
 
-def create_html_page(records, output_path, overall_summary=None):
+def create_html_page(records, output_path, overall_summary=None, pdf_filename=None):
     """Create main HTML page with links to detail pages.
     
     Args:
         records: List of record dictionaries
         output_path: Path to save the HTML file
         overall_summary: Optional dictionary containing overall patient summary
+        pdf_filename: Optional filename of the compiled PDF file
     """
     if not records:
         logging.warning("No records to create HTML page")
@@ -328,6 +329,18 @@ def create_html_page(records, output_path, overall_summary=None):
                 overflow: visible;
             }}
         }}
+        
+        .btn-pdf {{
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            margin-left: auto;
+        }}
+        
+        .btn-pdf:hover {{
+            background-color: #45a049;
+            color: white;
+        }}
     </style>
 </head>
 <body>
@@ -335,6 +348,7 @@ def create_html_page(records, output_path, overall_summary=None):
         <div class="header-main">
             <img src="html/Logo.png" alt="Logo" class="logo">
             <h1>Medical Records Viewer</h1>
+            {f'<a href="records/{pdf_filename}" target="_blank" class="btn btn-pdf">View Complete Medical Records PDF</a>' if pdf_filename else ''}
         </div>
     </header>
     <div class="content">

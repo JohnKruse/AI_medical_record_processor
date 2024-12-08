@@ -564,8 +564,13 @@ def ensure_output_location(config):
     # Create main output directory and subdirectories if they don't exist
     os.makedirs(output_location, exist_ok=True)
     os.makedirs(os.path.join(output_location, 'html'), exist_ok=True)
-    os.makedirs(os.path.join(output_location, 'records'), exist_ok=True)
     os.makedirs(os.path.join(output_location, 'data_files'), exist_ok=True)
+    
+    # Clear and recreate the records directory
+    records_dir = os.path.join(output_location, 'records')
+    if os.path.exists(records_dir):
+        shutil.rmtree(records_dir)
+    os.makedirs(records_dir)
     
     # Copy logo and other assets only if they don't exist
     web_page_dir = os.path.join(os.path.dirname(__file__), 'web_page')
@@ -693,14 +698,14 @@ def main():
         # Generate HTML with overall summary
         output_html = config.get('output_html', 'output.html')
         output_html_path = os.path.join(output_location, output_html)
-        create_html_page(records_df.to_dict('records'), output_html_path, overall_summary)
+        pdf_filename = config.get('output_pdf', 'medical_records.pdf')
+        create_html_page(records_df.to_dict('records'), output_html_path, overall_summary, pdf_filename)
         logging.info(f"Created HTML output at: {output_html_path}")
         
         # Generate PDF report
-        output_pdf = config.get('output_pdf')
-        if output_pdf:
-            generate_medical_records_pdf("config/config.yaml", output_pdf)
-            logging.info(f"Created PDF report at: {os.path.join(output_location, output_pdf)}")
+        if pdf_filename:
+            generate_medical_records_pdf("config/config.yaml", pdf_filename)
+            logging.info(f"Created PDF report at: {os.path.join(output_location, pdf_filename)}")
         
         logging.info("Processing complete")
         
