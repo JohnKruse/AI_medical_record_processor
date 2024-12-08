@@ -9,7 +9,6 @@ import json  # Add this at the top with other imports
 import pandas as pd
 from translator import Translator
 import shutil
-from pdf_generator import generate_medical_records_pdf  # Import PDF generator
 
 # Import custom utilities
 from ai_utils import *
@@ -19,6 +18,7 @@ from checksum_utils import *
 from file_processing import *
 from metadata import find_first_date_in_text, create_new_filename
 from document_utils import *
+from pdf_generator import generate_medical_records_pdf  # Import PDF generator
 
 def setup_logging():
     """Configure logging with custom file size management."""
@@ -383,7 +383,7 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     
                     logging.debug(f"Structured data stored for index {index}")
                 except json.JSONDecodeError as e:
-                    logging.error(f"Failed to parse JSON response: {e}")
+                    logging.error(f"Failed to parse JSON response: {str(e)}")
                     # Set empty values for all columns on error
                     for col, default_value in new_columns.items():
                         records_df.at[index, col] = default_value
@@ -466,7 +466,7 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     
                     logging.debug(f"Structured data stored for index {index}")
                 except json.JSONDecodeError as e:
-                    logging.error(f"Failed to parse JSON response: {e}")
+                    logging.error(f"Failed to parse JSON response: {str(e)}")
                     # Set empty values for all columns on error
                     for col, default_value in new_columns.items():
                         records_df.at[index, col] = default_value
@@ -564,13 +564,8 @@ def ensure_output_location(config):
     # Create main output directory and subdirectories if they don't exist
     os.makedirs(output_location, exist_ok=True)
     os.makedirs(os.path.join(output_location, 'html'), exist_ok=True)
+    os.makedirs(os.path.join(output_location, 'records'), exist_ok=True)
     os.makedirs(os.path.join(output_location, 'data_files'), exist_ok=True)
-    
-    # Clear and recreate the records directory
-    records_dir = os.path.join(output_location, 'records')
-    if os.path.exists(records_dir):
-        shutil.rmtree(records_dir)
-    os.makedirs(records_dir)
     
     # Copy logo and other assets only if they don't exist
     web_page_dir = os.path.join(os.path.dirname(__file__), 'web_page')
@@ -698,14 +693,14 @@ def main():
         # Generate HTML with overall summary
         output_html = config.get('output_html', 'output.html')
         output_html_path = os.path.join(output_location, output_html)
-        pdf_filename = config.get('output_pdf', 'medical_records.pdf')
-        create_html_page(records_df.to_dict('records'), output_html_path, overall_summary, pdf_filename)
+        create_html_page(records_df.to_dict('records'), output_html_path, overall_summary)
         logging.info(f"Created HTML output at: {output_html_path}")
         
         # Generate PDF report
-        if pdf_filename:
-            generate_medical_records_pdf("config/config.yaml", pdf_filename)
-            logging.info(f"Created PDF report at: {os.path.join(output_location, pdf_filename)}")
+        output_pdf = config.get('output_pdf')
+        if output_pdf:
+            generate_medical_records_pdf("config/config.yaml", output_pdf)
+            logging.info(f"Created PDF report at: {os.path.join(output_location, output_pdf)}")
         
         logging.info("Processing complete")
         
