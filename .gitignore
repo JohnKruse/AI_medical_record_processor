@@ -1,5 +1,7 @@
 # Configuration - only ignore the template
 *.env
+config/*.yaml
+!config/*template*.yaml
 
 # Logs
 *.log
