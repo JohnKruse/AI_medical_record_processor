@@ -25,8 +25,11 @@ class TranslationManager:
     
     def set_language(self, language_code):
         """Set the current language."""
+        logging.info(f"Setting language to: {language_code}")
+        logging.info(f"Available languages: {list(self._translations.keys())}")
         if language_code in self._translations:
             self.current_language = language_code
+            logging.info(f"Successfully set language to: {language_code}")
         else:
             logging.warning(f"Language {language_code} not found, falling back to {self.default_language}")
             self.current_language = self.default_language
