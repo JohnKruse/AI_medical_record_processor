@@ -11,12 +11,18 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.platypus.tables import Table, TableStyle
 import PyPDF2
 import tempfile
+from translation_manager import TranslationManager
 
 def generate_medical_records_pdf(config_path, output_pdf):
     """Generate a PDF report of medical records."""
     # Load configuration
     with open(config_path, 'r') as f:
         config = json.load(f) if config_path.endswith('.json') else yaml.safe_load(f)
+    
+    # Initialize translation manager
+    translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
+    translator = TranslationManager(translations_dir, default_language='en')
+    translator.set_language(config.get('output_language', 'en'))
     
     # Setup paths
     output_location = config['output_location']
@@ -64,11 +70,11 @@ def generate_medical_records_pdf(config_path, output_pdf):
     story = []
     
     # 1. Cover sheet
-    patient_name = df['patient_last_name'].iloc[0] if not pd.isna(df['patient_last_name'].iloc[0]) else "Unknown"
+    patient_name = df['patient_last_name'].iloc[0] if not pd.isna(df['patient_last_name'].iloc[0]) else translator.get('status.unknown')
     patient_fname = df['patient_first_name'].iloc[0] if not pd.isna(df['patient_first_name'].iloc[0]) else ""
     current_date = datetime.now().strftime('%Y-%m-%d')
     
-    story.append(Paragraph(f"Medical Records<br/>{patient_name}, {patient_fname}", title_style))
+    story.append(Paragraph(f"{translator.get('pdf.medical_records')}<br/>{patient_name}, {patient_fname}", title_style))
     story.append(Paragraph(current_date, title_style))
     story.append(PageBreak())
     
@@ -76,29 +82,29 @@ def generate_medical_records_pdf(config_path, output_pdf):
     if os.path.exists(os.path.join(output_location, 'data_files', 'overall_summary.txt')):
         with open(os.path.join(output_location, 'data_files', 'overall_summary.txt'), 'r') as f:
             summary = f.read()
-        story.append(Paragraph("Overall Summary", heading_style))
+        story.append(Paragraph(translator.get('pdf.overall_summary'), heading_style))
         story.append(Paragraph(summary, normal_style))
         story.append(PageBreak())
     
     # 3. Records Included
-    story.append(Paragraph("Records Included", heading_style))
+    story.append(Paragraph(translator.get('pdf.records_included'), heading_style))
     
     # Create table of contents with proper column widths
     records_data = []
     for i, (_, record) in enumerate(df.iterrows(), 1):
         records_data.append([
             str(i),
-            record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else 'Unknown',
-            Paragraph(str(record['visit_type']) if pd.notna(record['visit_type']) else 'Unknown', normal_style),
-            Paragraph(str(record['provider_name']) if pd.notna(record['provider_name']) else 'Unknown', normal_style)
+            record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else translator.get('status.unknown'),
+            Paragraph(str(record['visit_type']) if pd.notna(record['visit_type']) else translator.get('status.unknown'), normal_style),
+            Paragraph(str(record['provider_name']) if pd.notna(record['provider_name']) else translator.get('status.unknown'), normal_style)
         ])
     
     # Table headers
     headers = [
-        Paragraph('#', normal_style),
-        Paragraph('Treatment Date', normal_style),
-        Paragraph('Visit Type', normal_style),
-        Paragraph('Doctor Name', normal_style)
+        Paragraph(translator.get('table.number'), normal_style),
+        Paragraph(translator.get('fields.treatment_date'), normal_style),
+        Paragraph(translator.get('fields.visit_type'), normal_style),
+        Paragraph(translator.get('fields.provider_name'), normal_style)
     ]
     
     # Calculate available width (letter page width minus margins)
@@ -170,14 +176,19 @@ def generate_medical_records_pdf(config_path, output_pdf):
         )
         
         story = []
-        story.append(Paragraph(f"Record {i}", heading_style))
+        story.append(Paragraph(f"{translator.get('pdf.record_number')} {i}", heading_style))
         
         record_info = [
-            ('Treatment Date', record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else 'Unknown'),
-            ('Visit Type', str(record['visit_type']) if pd.notna(record['visit_type']) else 'Unknown'),
-            ('Doctor Name', str(record['provider_name']) if pd.notna(record['provider_name']) else 'Unknown'),
-            ('Primary Condition', str(record['primary_condition']) if pd.notna(record['primary_condition']) else 'Unknown'),
-            ('Diagnosis', str(record['diagnoses']) if pd.notna(record['diagnoses']) else 'Unknown')
+            (translator.get('fields.treatment_date'), 
+             record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else translator.get('status.unknown')),
+            (translator.get('fields.visit_type'), 
+             str(record['visit_type']) if pd.notna(record['visit_type']) else translator.get('status.unknown')),
+            (translator.get('fields.provider_name'), 
+             str(record['provider_name']) if pd.notna(record['provider_name']) else translator.get('status.unknown')),
+            (translator.get('fields.primary_condition'), 
+             str(record['primary_condition']) if pd.notna(record['primary_condition']) else translator.get('status.unknown')),
+            (translator.get('fields.diagnoses'), 
+             str(record['diagnoses']) if pd.notna(record['diagnoses']) else translator.get('status.unknown'))
         ]
         
         for label, value in record_info:
