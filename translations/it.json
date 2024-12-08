@@ -8,7 +8,8 @@
     "page_title": "Visualizzatore Cartelle Cliniche",
     "actions": {
         "print": "Stampa",
-        "view_original": "Visualizza Originale"
+        "view_original": "Visualizza Originale",
+        "view_complete_pdf": "Visualizza PDF Completo Cartella Clinica"
     },
     "fields": {
         "treatment_date": "Data Trattamento",
@@ -33,6 +34,24 @@
     "status": {
         "not_available": "N/D",
         "processing": "In Elaborazione...",
-        "error": "Errore"
+        "error": "Errore",
+        "unknown": "Sconosciuto"
+    },
+    "pdf": {
+        "medical_records": "Cartella Clinica",
+        "overall_summary": "Riepilogo Generale",
+        "records_included": "Documenti Inclusi",
+        "record_number": "Documento"
+    },
+    "table": {
+        "number": "#",
+        "doctor_name": "Nome Medico"
+    },
+    "summary_sections": {
+        "patient_description": "Descrizione Paziente",
+        "medical_history": "Storia Clinica",
+        "summary": "Riepilogo",
+        "key_findings": "Risultati Chiave",
+        "recommendations": "Raccomandazioni"
     }
 }

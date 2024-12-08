@@ -457,23 +457,23 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
                 const summaryHtml = '<div class="record-details">' +
                     '<h2>' + translations.pdf.overall_summary + '</h2>' +
                     '<div class="summary-section">' +
-                        '<h3>Patient Description</h3>' +
+                        '<h3>' + translations.summary_sections.patient_description + '</h3>' +
                         '<p>' + (overallSummary?.patient?.section || translations.status.not_available) + '</p>' +
                     '</div>' +
                     '<div class="summary-section">' +
-                        '<h3>Medical History</h3>' +
+                        '<h3>' + translations.summary_sections.medical_history + '</h3>' +
                         formatArraySection(overallSummary?.medical_history?.section, 'bullet') +
                     '</div>' +
                     '<div class="summary-section">' +
-                        '<h3>' + translations.fields.summary + '</h3>' +
+                        '<h3>' + translations.summary_sections.summary + '</h3>' +
                         formatArraySection(overallSummary?.summary?.section) +
                     '</div>' +
                     '<div class="summary-section">' +
-                        '<h3>Key Findings</h3>' +
+                        '<h3>' + translations.summary_sections.key_findings + '</h3>' +
                         formatArraySection(overallSummary?.key_findings?.section, 'bullet') +
                     '</div>' +
                     '<div class="summary-section">' +
-                        '<h3>Recommendations</h3>' +
+                        '<h3>' + translations.summary_sections.recommendations + '</h3>' +
                         formatArraySection(overallSummary?.recommendations?.section, 'bullet') +
                     '</div>' +
                 '</div>';
