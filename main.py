@@ -9,6 +9,7 @@ import json  # Add this at the top with other imports
 import pandas as pd
 from translator import Translator
 import shutil
+from pdf_generator import generate_medical_records_pdf  # Import PDF generator
 
 # Import custom utilities
 from ai_utils import *
@@ -382,7 +383,7 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     
                     logging.debug(f"Structured data stored for index {index}")
                 except json.JSONDecodeError as e:
-                    logging.error(f"Failed to parse JSON response: {str(e)}")
+                    logging.error(f"Failed to parse JSON response: {e}")
                     # Set empty values for all columns on error
                     for col, default_value in new_columns.items():
                         records_df.at[index, col] = default_value
@@ -465,7 +466,7 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     
                     logging.debug(f"Structured data stored for index {index}")
                 except json.JSONDecodeError as e:
-                    logging.error(f"Failed to parse JSON response: {str(e)}")
+                    logging.error(f"Failed to parse JSON response: {e}")
                     # Set empty values for all columns on error
                     for col, default_value in new_columns.items():
                         records_df.at[index, col] = default_value
@@ -694,6 +695,12 @@ def main():
         output_html_path = os.path.join(output_location, output_html)
         create_html_page(records_df.to_dict('records'), output_html_path, overall_summary)
         logging.info(f"Created HTML output at: {output_html_path}")
+        
+        # Generate PDF report
+        output_pdf = config.get('output_pdf')
+        if output_pdf:
+            generate_medical_records_pdf("config/config.yaml", output_pdf)
+            logging.info(f"Created PDF report at: {os.path.join(output_location, output_pdf)}")
         
         logging.info("Processing complete")
         
