@@ -3,6 +3,9 @@ import logging
 import os
 import json
 import shutil
+import yaml
+from template_manager import TemplateManager
+from translation_manager import TranslationManager
 
 def get_document_summary(text):
     """Get document summary using AI/ML techniques."""
@@ -16,12 +19,30 @@ def create_detail_page(record, output_dir):
     filename = record['new_filename'].replace('.', '_') + '.html'
     detail_path = os.path.join(output_dir, 'html', 'details', filename)
     
+    # Load configuration to get language
+    config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.yaml')
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    logging.info(f"Loaded config: {config}")
+    logging.info(f"Output language from config: {config.get('output_language', 'en')}")
+    
+    # Initialize translation manager with configured language
+    translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
+    translator = TranslationManager(translations_dir, default_language='en')
+    translator.set_language(config.get('output_language', 'en'))
+    
+    # Get translations for static text
+    tr = translator.get_all_translations()
+    logging.info(f"Current language after setting: {translator.current_language}")
+    logging.info(f"Available translations: {list(tr.keys())}")
+    
     html_content = f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="{tr['language_metadata']['code']}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Record Details - {record['new_filename']}</title>
+    <title>{tr['page_title']} - {record['new_filename']}</title>
     <link rel="stylesheet" href="../styles.css">
     <style>
         .raw-text {{
@@ -37,33 +58,33 @@ def create_detail_page(record, output_dir):
 </head>
 <body>
     <div class="record-details">
-        <h2 class="record-title">{{record['new_filename']}}</h2>
+        <h2 class="record-title">{record['new_filename']}</h2>
         <div class="actions">
             <button class="btn btn-print" onclick="window.print()">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
                     <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
                 </svg>
-                Print
+                {tr['actions']['print']}
             </button>
-            <a href="../../records/{{record['new_filename']}}" target="_blank" class="btn">View Original</a>
+            <a href="../../records/{record['new_filename']}" target="_blank" class="btn">{tr['actions']['view_original']}</a>
         </div>
         <table>
-            <tr><th>Treatment Date (Regex)</th><td>{{record.get('treatment_date', 'N/A')}}</td></tr>
-            <tr><th>Treatment Date (AI)</th><td>{{record.get('ai_treatment_date', 'N/A')}}</td></tr>
-            <tr><th>Visit Type</th><td>{{record.get('visit_type', 'N/A')}}</td></tr>
-            <tr><th>Provider Name</th><td>{{record.get('provider_name', 'N/A')}}</td></tr>
-            <tr><th>Provider Facility</th><td>{{record.get('provider_facility', 'N/A')}}</td></tr>
-            <tr><th>Primary Condition</th><td>{{record.get('primary_condition', 'N/A')}}</td></tr>
-            <tr><th>Diagnoses</th><td>{{record.get('diagnoses', 'N/A')}}</td></tr>
-            <tr><th>Treatments</th><td>{{record.get('treatments', 'N/A')}}</td></tr>
-            <tr><th>Medications</th><td>{{record.get('medications', 'N/A')}}</td></tr>
-            <tr><th>Test Results</th><td>{{record.get('test_results', 'N/A')}}</td></tr>
-            <tr><th>Summary</th><td>{{record.get('summary', 'N/A')}}</td></tr>
-            <tr><th>Last Processed</th><td>{{record.get('last_processed', 'N/A')}}</td></tr>
+            <tr><th>{tr['fields']['treatment_date_regex']}</th><td>{record.get('treatment_date', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['treatment_date_ai']}</th><td>{record.get('ai_treatment_date', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['visit_type']}</th><td>{record.get('visit_type', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['provider_name']}</th><td>{record.get('provider_name', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['provider_facility']}</th><td>{record.get('provider_facility', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['primary_condition']}</th><td>{record.get('primary_condition', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['diagnoses']}</th><td>{record.get('diagnoses', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['treatments']}</th><td>{record.get('treatments', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['medications']}</th><td>{record.get('medications', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['test_results']}</th><td>{record.get('test_results', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['summary']}</th><td>{record.get('summary', tr['status']['not_available'])}</td></tr>
+            <tr><th>{tr['fields']['last_processed']}</th><td>{record.get('last_processed', tr['status']['not_available'])}</td></tr>
             <tr>
-                <th>Raw Extracted Text</th>
-                <td><div class="raw-text">{{record.get('text', 'N/A')}}</div></td>
+                <th>{tr['fields']['raw_text']}</th>
+                <td><div class="raw-text">{record.get('text', tr['status']['not_available'])}</div></td>
             </tr>
         </table>
     </div>
@@ -95,15 +116,33 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     # Sort records by filename (newest first)
     sorted_records = sorted(records, key=lambda x: x.get('new_filename', ''), reverse=True)
     
+    # Load configuration to get language
+    config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.yaml')
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    logging.info(f"Loaded config: {config}")
+    logging.info(f"Output language from config: {config.get('output_language', 'en')}")
+    
+    # Initialize translation manager with configured language
+    translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
+    translator = TranslationManager(translations_dir, default_language='en')
+    translator.set_language(config.get('output_language', 'en'))
+    
+    # Get translations for static text
+    tr = translator.get_all_translations()
+    logging.info(f"Current language after setting: {translator.current_language}")
+    logging.info(f"Available translations: {list(tr.keys())}")
+    
     # Get the absolute path of the output directory
     output_dir = os.path.dirname(os.path.abspath(output_path))
     
     html_content = f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="{tr['language_metadata']['code']}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Records Viewer</title>
+    <title>{tr['page_title']}</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         
@@ -347,20 +386,20 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     <header>
         <div class="header-main">
             <img src="html/Logo.png" alt="Logo" class="logo">
-            <h1>Medical Records Viewer</h1>
-            {f'<a href="records/{pdf_filename}" target="_blank" class="btn btn-pdf">View Complete Medical Records PDF</a>' if pdf_filename else ''}
+            <h1>{tr['page_title']}</h1>
+            {f'<a href="records/{pdf_filename}" target="_blank" class="btn btn-pdf">{tr["actions"]["view_complete_pdf"]}</a>' if pdf_filename else ''}
         </div>
     </header>
     <div class="content">
         <div class="file-list">
             <div class="file-list-header">
-                Records ({len(sorted_records)})
+                {tr['pdf']['records_included']} ({len(sorted_records)})
             </div>
             <div class="file-list-content">
                 <ul>
                     <li class="file-item" data-index="-1">
                         <span class="number">1.</span>
-                        Overall Summary
+                        {tr['pdf']['overall_summary']}
                     </li>
                     {''.join([
                         f'<li class="file-item" data-index="{i}">'
@@ -384,19 +423,20 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
         // Initialize records data
         const records = {json.dumps(sorted_records)};
         const overallSummary = {json.dumps(overall_summary) if overall_summary else 'null'};
+        const translations = {json.dumps(tr)};
         let currentIndex = -1;
         
         // Format lists for display
         function formatList(items) {{
-            if (!items) return 'N/A';
+            if (!items) return translations.status.not_available;
             if (typeof items === 'string') return items;
-            if (Array.isArray(items)) return items.join(', ') || 'N/A';
-            return 'N/A';
+            if (Array.isArray(items)) return items.join(', ') || translations.status.not_available;
+            return translations.status.not_available;
         }}
         
         // Helper function to format array sections
         const formatArraySection = (array, listType = '') => {{
-            if (!array || !Array.isArray(array)) return 'No information available';
+            if (!array || !Array.isArray(array)) return translations.status.not_available;
             if (listType === 'bullet') {{
                 return '<ul>' + array.map(item => '<li>' + item + '</li>').join('') + '</ul>';
             }}
@@ -415,17 +455,17 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
             if (index === -1) {{
                 // Show overall summary
                 const summaryHtml = '<div class="record-details">' +
-                    '<h2>Overall Summary</h2>' +
+                    '<h2>' + translations.pdf.overall_summary + '</h2>' +
                     '<div class="summary-section">' +
                         '<h3>Patient Description</h3>' +
-                        '<p>' + (overallSummary?.patient?.section || 'No patient description available') + '</p>' +
+                        '<p>' + (overallSummary?.patient?.section || translations.status.not_available) + '</p>' +
                     '</div>' +
                     '<div class="summary-section">' +
                         '<h3>Medical History</h3>' +
                         formatArraySection(overallSummary?.medical_history?.section, 'bullet') +
                     '</div>' +
                     '<div class="summary-section">' +
-                        '<h3>Summary</h3>' +
+                        '<h3>' + translations.fields.summary + '</h3>' +
                         formatArraySection(overallSummary?.summary?.section) +
                     '</div>' +
                     '<div class="summary-section">' +
@@ -451,23 +491,23 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
                                 '<path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>' +
                                 '<path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>' +
                             '</svg>' +
-                            'Print' +
+                            translations.actions.print +
                         '</button>' +
-                        '<a href="records/' + record.new_filename + '" target="_blank" class="btn">View Original</a>' +
+                        '<a href="records/' + record.new_filename + '" target="_blank" class="btn">' + translations.actions.view_original + '</a>' +
                     '</div>' +
                     '<table>' +
-                        '<tr><th>Treatment Date (Regex)</th><td>' + (record.treatment_date || 'N/A') + '</td></tr>' +
-                        '<tr><th>Treatment Date (AI)</th><td>' + (record.ai_treatment_date || 'N/A') + '</td></tr>' +
-                        '<tr><th>Visit Type</th><td>' + (record.visit_type || 'N/A') + '</td></tr>' +
-                        '<tr><th>Provider Name</th><td>' + (record.provider_name || 'N/A') + '</td></tr>' +
-                        '<tr><th>Provider Facility</th><td>' + (record.provider_facility || 'N/A') + '</td></tr>' +
-                        '<tr><th>Primary Condition</th><td>' + (record.primary_condition || 'N/A') + '</td></tr>' +
-                        '<tr><th>Diagnoses</th><td>' + formatList(record.diagnoses) + '</td></tr>' +
-                        '<tr><th>Treatments</th><td>' + formatList(record.treatments) + '</td></tr>' +
-                        '<tr><th>Medications</th><td>' + formatList(record.medications) + '</td></tr>' +
-                        '<tr><th>Test Results</th><td>' + formatList(record.test_results) + '</td></tr>' +
-                        '<tr><th>Summary</th><td>' + (record.summary || 'N/A') + '</td></tr>' +
-                        '<tr><th>Last Processed</th><td>' + (record.last_processed || 'N/A') + '</td></tr>' +
+                        '<tr><th>' + translations.fields.treatment_date_regex + '</th><td>' + (record.treatment_date || translations.status.not_available) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.treatment_date_ai + '</th><td>' + (record.ai_treatment_date || translations.status.not_available) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.visit_type + '</th><td>' + (record.visit_type || translations.status.not_available) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.provider_name + '</th><td>' + (record.provider_name || translations.status.not_available) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.provider_facility + '</th><td>' + (record.provider_facility || translations.status.not_available) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.primary_condition + '</th><td>' + (record.primary_condition || translations.status.not_available) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.diagnoses + '</th><td>' + formatList(record.diagnoses) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.treatments + '</th><td>' + formatList(record.treatments) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.medications + '</th><td>' + formatList(record.medications) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.test_results + '</th><td>' + formatList(record.test_results) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.summary + '</th><td>' + (record.summary || translations.status.not_available) + '</td></tr>' +
+                        '<tr><th>' + translations.fields.last_processed + '</th><td>' + (record.last_processed || translations.status.not_available) + '</td></tr>' +
                     '</table>';
                 
                 document.querySelector('.record-details').innerHTML = detailsHtml;
