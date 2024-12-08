@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${tr('page_title')}</title>
+    <link rel="stylesheet" href="html/styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-main">
+            <img src="html/Logo.png" alt="Logo" class="logo">
+            <h1>${tr('page_title')}</h1>
+            ${pdf_link}
+        </div>
+    </header>
+
+    <nav class="file-list">
+        <div class="file-list-header">
+            ${tr('pdf.records_included')} (${record_count})
+        </div>
+        <ul id="recordsList"></ul>
+    </nav>
+
+    <main class="detail-view">
+        <div class="record-details">
+            <p>${tr('status.processing')}</p>
+        </div>
+    </main>
+
+    <script>
+        // Inject translations into JavaScript
+        const translations = ${translations_json};
+        const records = ${records_json};
+        const overallSummary = ${summary_json};
+        
+        // Translation helper function
+        function tr(key) {
+            return key.split('.').reduce((obj, i) => obj ? obj[i] : null, translations) || key;
+        }
+        
+        // Initialize the UI
+        function initializeUI() {
+            const recordsList = document.getElementById('recordsList');
+            
+            // Add overall summary item
+            const summaryItem = document.createElement('li');
+            summaryItem.className = 'file-item';
+            summaryItem.dataset.index = '-1';
+            summaryItem.innerHTML = `
+                <span class="number">1.</span>
+                ${tr('pdf.overall_summary')}
+            `;
+            recordsList.appendChild(summaryItem);
+            
+            // Add record items
+            records.forEach((record, index) => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.dataset.index = index;
+                li.innerHTML = `
+                    <span class="number">${index + 2}.</span>
+                    ${record.new_filename}
+                `;
+                recordsList.appendChild(li);
+            });
+            
+            // Add click handlers
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.addEventListener('click', () => showRecord(parseInt(item.dataset.index)));
+            });
+        }
+        
+        // Show record details
+        function showRecord(index) {
+            const recordDetail = document.querySelector('.record-details');
+            document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-index="${index}"]`).classList.add('active');
+            
+            if (index === -1) {
+                // Show overall summary
+                recordDetail.innerHTML = `
+                    <h2>${tr('pdf.overall_summary')}</h2>
+                    <p>${overallSummary || tr('status.not_available')}</p>
+                `;
+            } else {
+                const record = records[index];
+                recordDetail.innerHTML = `
+                    <h2>${record.new_filename}</h2>
+                    <div class="actions">
+                        <button class="btn btn-print" onclick="window.print()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                            </svg>
+                            ${tr('actions.print')}
+                        </button>
+                        <a href="../../records/${record.new_filename}" target="_blank" class="btn">
+                            ${tr('actions.view_original')}
+                        </a>
+                    </div>
+                    <table>
+                        ${Object.entries({
+                            'fields.treatment_date_regex': record.treatment_date,
+                            'fields.treatment_date_ai': record.ai_treatment_date,
+                            'fields.visit_type': record.visit_type,
+                            'fields.provider_name': record.provider_name,
+                            'fields.primary_condition': record.primary_condition,
+                            'fields.diagnoses': record.diagnoses,
+                            'fields.treatments': record.treatments,
+                            'fields.medications': record.medications,
+                            'fields.test_results': record.test_results,
+                            'fields.summary': record.summary,
+                            'fields.last_processed': record.last_processed,
+                            'fields.raw_text': record.text
+                        }).map(([key, value]) => `
+                            <tr>
+                                <th>${tr(key)}</th>
+                                <td>${value || tr('status.not_available')}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                `;
+            }
+        }
+        
+        // Initialize the UI when the page loads
+        document.addEventListener('DOMContentLoaded', initializeUI);
+    </script>
+</body>
+</html>
