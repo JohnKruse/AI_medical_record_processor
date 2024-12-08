@@ -134,6 +134,18 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     logging.info(f"Current language after setting: {translator.current_language}")
     logging.info(f"Available translations: {list(tr.keys())}")
     
+    # Try to generate PDF
+    pdf_status = {'available': False, 'error': None}
+    if pdf_filename:
+        try:
+            from pdf_generator import generate_medical_records_pdf
+            pdf_path = os.path.join(os.path.dirname(output_path), pdf_filename)
+            generate_medical_records_pdf(config_path, pdf_path)
+            pdf_status = {'available': True, 'error': None}
+        except Exception as e:
+            logging.error(f"Error generating PDF: {str(e)}")
+            pdf_status = {'available': False, 'error': str(e)}
+    
     # Get the absolute path of the output directory
     output_dir = os.path.dirname(os.path.abspath(output_path))
     
@@ -369,20 +381,57 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
             }}
         }}
         
-        .btn-pdf {{
+        .pdf-button {{
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            padding: 0.5rem 1rem;
             background-color: #4CAF50;
             color: white;
             border: none;
-            margin-left: auto;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
         }}
-        
-        .btn-pdf:hover {{
+        .pdf-button:hover {{
             background-color: #45a049;
+        }}
+        .pdf-button.error {{
+            background-color: #f44336;
+        }}
+        .pdf-button.error:hover {{
+            background-color: #da190b;
+        }}
+        .pdf-error {{
+            display: none;
+            position: fixed;
+            top: 4rem;
+            right: 1rem;
+            background-color: #f44336;
             color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            max-width: 300px;
+            z-index: 1000;
         }}
     </style>
 </head>
 <body>
+    {f'''
+    <button onclick="handlePdfClick()" class="pdf-button {'error' if pdf_status['error'] else ''}" title="{pdf_status['error'] if pdf_status['error'] else tr['actions']['view_complete_pdf']}">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5.523 12.424c.14-.082.293-.162.459-.238a7.878 7.878 0 0 1-.45.606c-.28.337-.498.516-.635.572a.266.266 0 0 1-.035.012.282.282 0 0 1-.026-.044c-.056-.11-.054-.216.04-.36.106-.165.319-.354.647-.548zm2.455-1.647c-.119.025-.237.05-.356.078a21.148 21.148 0 0 0 .5-1.05 12.045 12.045 0 0 0 .51.858c-.217.032-.436.07-.654.114zm2.525.939a3.881 3.881 0 0 1-.435-.41c.228.005.434.022.612.054.317.057.466.147.518.209a.095.095 0 0 1 .026.064.436.436 0 0 1-.06.2.307.307 0 0 1-.094.124.107.107 0 0 1-.069.015c-.09-.003-.258-.066-.498-.256zM8.278 6.97c-.04.244-.108.524-.2.829a4.86 4.86 0 0 1-.089-.346c-.076-.353-.087-.63-.046-.822.038-.177.11-.248.196-.283a.517.517 0 0 1 .145-.04c.013.03.028.092.032.198.005.122-.007.277-.038.465z"/>
+            <path fill-rule="evenodd" d="M4 0h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H4z"/>
+        </svg>
+        {tr['actions']['view_complete_pdf']}
+    </button>
+    <div id="pdfError" class="pdf-error"></div>
+    ''' if pdf_filename else ''}
     <header>
         <div class="header-main">
             <img src="html/Logo.png" alt="Logo" class="logo">
@@ -424,6 +473,7 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
         const records = {json.dumps(sorted_records)};
         const overallSummary = {json.dumps(overall_summary) if overall_summary else 'null'};
         const translations = {json.dumps(tr)};
+        const pdfStatus = {json.dumps(pdf_status)};
         let currentIndex = -1;
         
         // Format lists for display
@@ -551,6 +601,19 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
             // Show first record by default
             showRecord(-1);
         }});
+        
+        function handlePdfClick() {{
+            if (pdfStatus.available) {{
+                window.open('{pdf_filename}', '_blank');
+            }} else if (pdfStatus.error) {{
+                const errorDiv = document.getElementById('pdfError');
+                errorDiv.textContent = pdfStatus.error;
+                errorDiv.style.display = 'block';
+                setTimeout(() => {{
+                    errorDiv.style.display = 'none';
+                }}, 5000);
+            }}
+        }}
     </script>
 </body>
 </html>"""
