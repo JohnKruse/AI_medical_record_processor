@@ -8,7 +8,8 @@
     "page_title": "Medical Records Viewer",
     "actions": {
         "print": "Print",
-        "view_original": "View Original"
+        "view_original": "View Original",
+        "view_complete_pdf": "View Complete Medical Record PDF"
     },
     "fields": {
         "treatment_date": "Treatment Date",
@@ -24,7 +25,7 @@
         "test_results": "Test Results",
         "summary": "Summary",
         "last_processed": "Last Processed",
-        "raw_text": "Raw Extracted Text"
+        "raw_text": "Raw Text"
     },
     "navigation": {
         "previous": "Previous",
@@ -33,6 +34,24 @@
     "status": {
         "not_available": "N/A",
         "processing": "Processing...",
-        "error": "Error"
+        "error": "Error",
+        "unknown": "Unknown"
+    },
+    "pdf": {
+        "medical_records": "Medical Records",
+        "overall_summary": "Overall Summary",
+        "records_included": "Records Included",
+        "record_number": "Record"
+    },
+    "table": {
+        "number": "#",
+        "doctor_name": "Doctor Name"
+    },
+    "summary_sections": {
+        "patient_description": "Patient Description",
+        "medical_history": "Medical History",
+        "summary": "Summary",
+        "key_findings": "Key Findings",
+        "recommendations": "Recommendations"
     }
 }

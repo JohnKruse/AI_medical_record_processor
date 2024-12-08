@@ -5,17 +5,18 @@
         "name_in_english": "Spanish",
         "name_in_native": "Español"
     },
-    "page_title": "Visor de Registros Médicos",
+    "page_title": "Visor de Historiales Médicos",
     "actions": {
         "print": "Imprimir",
-        "view_original": "Ver Original"
+        "view_original": "Ver Original",
+        "view_complete_pdf": "Ver PDF Completo del Historial Médico"
     },
     "fields": {
         "treatment_date": "Fecha de Tratamiento",
         "treatment_date_regex": "Fecha de Tratamiento (Regex)",
         "treatment_date_ai": "Fecha de Tratamiento (IA)",
         "visit_type": "Tipo de Visita",
-        "provider_name": "Nombre del Proveedor",
+        "provider_name": "Nombre del Médico",
         "provider_facility": "Centro Médico",
         "primary_condition": "Condición Principal",
         "diagnoses": "Diagnósticos",
@@ -23,8 +24,8 @@
         "medications": "Medicamentos",
         "test_results": "Resultados de Pruebas",
         "summary": "Resumen",
-        "last_processed": "Último Procesamiento",
-        "raw_text": "Texto Extraído"
+        "last_processed": "Última Actualización",
+        "raw_text": "Texto Original"
     },
     "navigation": {
         "previous": "Anterior",
@@ -33,6 +34,24 @@
     "status": {
         "not_available": "N/D",
         "processing": "Procesando...",
-        "error": "Error"
+        "error": "Error",
+        "unknown": "Desconocido"
+    },
+    "pdf": {
+        "medical_records": "Historial Médico",
+        "overall_summary": "Resumen General",
+        "records_included": "Documentos Incluidos",
+        "record_number": "Documento"
+    },
+    "table": {
+        "number": "#",
+        "doctor_name": "Nombre del Médico"
+    },
+    "summary_sections": {
+        "patient_description": "Descripción del Paciente",
+        "medical_history": "Historia Clínica",
+        "summary": "Resumen",
+        "key_findings": "Hallazgos Principales",
+        "recommendations": "Recomendaciones"
     }
 }

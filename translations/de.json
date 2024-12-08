@@ -5,10 +5,11 @@
         "name_in_english": "German",
         "name_in_native": "Deutsch"
     },
-    "page_title": "Medizinische Akten Viewer",
+    "page_title": "Krankenakten-Viewer",
     "actions": {
         "print": "Drucken",
-        "view_original": "Original anzeigen"
+        "view_original": "Original anzeigen",
+        "view_complete_pdf": "Vollständige Krankenakte als PDF anzeigen"
     },
     "fields": {
         "treatment_date": "Behandlungsdatum",
@@ -17,22 +18,40 @@
         "visit_type": "Besuchsart",
         "provider_name": "Name des Arztes",
         "provider_facility": "Medizinische Einrichtung",
-        "primary_condition": "Hauptzustand",
+        "primary_condition": "Hauptbefund",
         "diagnoses": "Diagnosen",
         "treatments": "Behandlungen",
         "medications": "Medikamente",
         "test_results": "Testergebnisse",
         "summary": "Zusammenfassung",
-        "last_processed": "Zuletzt Verarbeitet",
-        "raw_text": "Extrahierter Text"
+        "last_processed": "Zuletzt verarbeitet",
+        "raw_text": "Rohtext"
     },
     "navigation": {
-        "previous": "Vorherige",
-        "next": "Nächste"
+        "previous": "Zurück",
+        "next": "Weiter"
     },
     "status": {
         "not_available": "N/V",
-        "processing": "Verarbeitung...",
-        "error": "Fehler"
+        "processing": "Wird verarbeitet...",
+        "error": "Fehler",
+        "unknown": "Unbekannt"
+    },
+    "pdf": {
+        "medical_records": "Krankenakte",
+        "overall_summary": "Gesamtübersicht",
+        "records_included": "Enthaltene Dokumente",
+        "record_number": "Dokument"
+    },
+    "table": {
+        "number": "#",
+        "doctor_name": "Name des Arztes"
+    },
+    "summary_sections": {
+        "patient_description": "Patientenbeschreibung",
+        "medical_history": "Krankengeschichte",
+        "summary": "Zusammenfassung",
+        "key_findings": "Hauptbefunde",
+        "recommendations": "Empfehlungen"
     }
 }
