@@ -90,8 +90,7 @@ def generate_medical_records_pdf(config_path, output_pdf):
             str(i),
             record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else 'Unknown',
             Paragraph(str(record['visit_type']) if pd.notna(record['visit_type']) else 'Unknown', normal_style),
-            Paragraph(str(record['provider_name']) if pd.notna(record['provider_name']) else 'Unknown', normal_style),
-            Paragraph(str(record['provider_facility']) if pd.notna(record['provider_facility']) else 'Unknown', normal_style)
+            Paragraph(str(record['provider_name']) if pd.notna(record['provider_name']) else 'Unknown', normal_style)
         ])
     
     # Table headers
@@ -99,8 +98,7 @@ def generate_medical_records_pdf(config_path, output_pdf):
         Paragraph('#', normal_style),
         Paragraph('Treatment Date', normal_style),
         Paragraph('Visit Type', normal_style),
-        Paragraph('Doctor Name', normal_style),
-        Paragraph('Provider Facility', normal_style)
+        Paragraph('Doctor Name', normal_style)
     ]
     
     # Calculate available width (letter page width minus margins)
@@ -109,10 +107,9 @@ def generate_medical_records_pdf(config_path, output_pdf):
     # Distribute column widths proportionally
     col_widths = [
         0.5*inch,              # # column
-        1.3*inch,             # Treatment Date
-        1.8*inch,             # Visit Type
-        2.0*inch,             # Doctor Name
-        available_width - (0.5 + 1.3 + 1.8 + 2.0)*inch  # Provider Facility gets remaining space
+        1.5*inch,             # Treatment Date
+        2.0*inch,             # Visit Type
+        available_width - (0.5 + 1.5 + 2.0)*inch  # Doctor Name gets remaining space
     ]
     
     records_table = Table([headers] + records_data, colWidths=col_widths)
@@ -179,7 +176,6 @@ def generate_medical_records_pdf(config_path, output_pdf):
             ('Treatment Date', record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else 'Unknown'),
             ('Visit Type', str(record['visit_type']) if pd.notna(record['visit_type']) else 'Unknown'),
             ('Doctor Name', str(record['provider_name']) if pd.notna(record['provider_name']) else 'Unknown'),
-            ('Provider Facility', str(record['provider_facility']) if pd.notna(record['provider_facility']) else 'Unknown'),
             ('Primary Condition', str(record['primary_condition']) if pd.notna(record['primary_condition']) else 'Unknown'),
             ('Diagnosis', str(record['diagnoses']) if pd.notna(record['diagnoses']) else 'Unknown')
         ]
