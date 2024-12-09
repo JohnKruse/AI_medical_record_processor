@@ -18,7 +18,6 @@ from checksum_utils import *
 from file_processing import *
 from metadata import find_first_date_in_text, create_new_filename
 from document_utils import *
-from pdf_generator import generate_medical_records_pdf  # Import PDF generator
 
 def setup_logging():
     """Configure logging with custom file size management."""
@@ -695,12 +694,6 @@ def main():
         output_html_path = os.path.join(output_location, output_html)
         create_html_page(records_df.to_dict('records'), output_html_path, overall_summary)
         logging.info(f"Created HTML output at: {output_html_path}")
-        
-        # Generate PDF report
-        output_pdf = config.get('output_pdf')
-        if output_pdf:
-            generate_medical_records_pdf("config/config.yaml", output_pdf)
-            logging.info(f"Created PDF report at: {os.path.join(output_location, output_pdf)}")
         
         logging.info("Processing complete")
         
