@@ -621,6 +621,24 @@ def main():
         logging.info("Loading configuration")
         config = load_config('config/config.yaml')
         
+        # Clean up previous output
+        output_location = config['output_location']
+        logging.info("Cleaning up previous output files")
+        cleanup_paths = [
+            os.path.join(output_location, 'data_files'),
+            os.path.join(output_location, 'records'),
+            os.path.join(output_location, config.get('output_html', 'output.html')),
+            os.path.join(output_location, config.get('output_pdf', 'medical_records_output.pdf'))
+        ]
+        for path in cleanup_paths:
+            if os.path.exists(path):
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                    logging.info(f"Removed directory: {path}")
+                else:
+                    os.remove(path)
+                    logging.info(f"Removed file: {path}")
+        
         # Ensure output location
         ensure_output_location(config)
         
