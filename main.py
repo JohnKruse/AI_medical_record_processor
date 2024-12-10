@@ -382,7 +382,7 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     
                     logging.debug(f"Structured data stored for index {index}")
                 except json.JSONDecodeError as e:
-                    logging.error(f"Failed to parse JSON response: {str(e)}")
+                    logging.error(f"Failed to parse JSON response: {e}")
                     # Set empty values for all columns on error
                     for col, default_value in new_columns.items():
                         records_df.at[index, col] = default_value
@@ -465,7 +465,7 @@ def batch_process_medical_records(records_df: pd.DataFrame, config: Dict[str, An
                     
                     logging.debug(f"Structured data stored for index {index}")
                 except json.JSONDecodeError as e:
-                    logging.error(f"Failed to parse JSON response: {str(e)}")
+                    logging.error(f"Failed to parse JSON response: {e}")
                     # Set empty values for all columns on error
                     for col, default_value in new_columns.items():
                         records_df.at[index, col] = default_value
@@ -701,6 +701,12 @@ def main():
         # Generate overall summary before creating HTML
         overall_summary = generate_overall_summary(records_df, config, openai_api_key)
         logging.info("Generated overall patient summary")
+
+        # Save overall summary to JSON
+        summary_path = os.path.join(output_location, 'data_files', 'overall_summary.json')
+        with open(summary_path, 'w', encoding='utf-8') as f:
+            json.dump(overall_summary, f, indent=2, ensure_ascii=False)
+        logging.info(f"Saved overall summary to: {summary_path}")
 
         # Save CSV
         csv_path = os.path.join(output_location, 'data_files', 'extracted_data.csv')
