@@ -9,6 +9,7 @@ import json  # Add this at the top with other imports
 import pandas as pd
 from translator import Translator
 import shutil
+from pdf_generator import generate_medical_records_pdf, generate_overall_summary_pdf
 
 # Import custom utilities
 from ai_utils import *
@@ -708,7 +709,34 @@ def main():
             json.dump(overall_summary, f, indent=2, ensure_ascii=False)
         logging.info(f"Saved overall summary to: {summary_path}")
 
+        # Generate overall summary PDF
+        current_date = dt.now().strftime('%Y%m%d')
+        summary_pdf_path = os.path.join(output_location, 'records', f'overall_summary_{current_date}.pdf')
+        generate_overall_summary_pdf(config, summary_pdf_path)
+        logging.info(f"Generated overall summary PDF: {summary_pdf_path}")
+
+        # Add summary PDF to records DataFrame
+        summary_record = {
+            'treatment_date': dt.now().strftime('%Y-%m-%d'),
+            'visit_type': 'Overall Summary',
+            'provider_name': 'Medical Records System',
+            'diagnoses': [],
+            'treatments': [],
+            'medications': [],
+            'primary_condition': 'Patient Summary Report',
+            'file_path': summary_pdf_path,
+            'new_filename': os.path.basename(summary_pdf_path),
+            'original_filename': os.path.basename(summary_pdf_path),
+            'checksum': '',  # No checksum needed for generated file
+            'notes': 'Automatically generated summary of all medical records'
+        }
+        records_df = pd.concat([pd.DataFrame([summary_record]), records_df], ignore_index=True)
+
         # Save CSV
+        csv_df = records_df.copy()
+        for col in ['diagnoses', 'treatments', 'medications']:
+            if col in csv_df.columns:
+                csv_df[col] = csv_df[col].apply(lambda x: '; '.join(x) if isinstance(x, list) else x)
         csv_path = os.path.join(output_location, 'data_files', 'extracted_data.csv')
         csv_df.to_csv(csv_path, index=False)
         logging.info(f"Saved data to CSV: {csv_path}")

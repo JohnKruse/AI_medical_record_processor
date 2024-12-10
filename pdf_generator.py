@@ -12,6 +12,7 @@ from reportlab.platypus.tables import Table, TableStyle
 import PyPDF2
 import tempfile
 from translation_manager import TranslationManager
+import logging
 
 def generate_medical_records_pdf(config_path, output_pdf):
     """Generate a PDF report of medical records."""
@@ -220,8 +221,141 @@ def generate_medical_records_pdf(config_path, output_pdf):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
+    """Generate a PDF report from the overall summary JSON."""
+    try:
+        # Handle config input
+        if isinstance(config_path_or_dict, dict):
+            config = config_path_or_dict
+        else:
+            with open(config_path_or_dict, 'r') as f:
+                config = json.load(f) if str(config_path_or_dict).endswith('.json') else yaml.safe_load(f)
+        
+        # Initialize translation manager
+        translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
+        translator = TranslationManager(translations_dir, default_language='en')
+        translator.set_language(config.get('output_language', 'en'))
+        
+        # Setup paths
+        output_location = config['output_location']
+        summary_file = os.path.join(output_location, 'data_files', 'overall_summary.json')
+        
+        if not os.path.exists(summary_file):
+            raise FileNotFoundError(f"Overall summary file not found: {summary_file}")
+            
+        # Load summary data
+        with open(summary_file, 'r') as f:
+            summary_data = json.load(f)
+            
+        # Set output PDF path if not provided
+        if output_pdf is None:
+            current_date = datetime.now().strftime('%Y%m%d')
+            output_pdf = os.path.join(output_location, 'records', f'overall_summary_{current_date}.pdf')
+            
+        # Create PDF document
+        doc = SimpleDocTemplate(
+            output_pdf,
+            pagesize=letter,
+            rightMargin=1*inch,
+            leftMargin=1*inch,
+            topMargin=1*inch,
+            bottomMargin=1*inch
+        )
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Title'],
+            fontSize=24,
+            spaceAfter=30,
+            alignment=1  # Center alignment
+        )
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=20
+        )
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=12,
+            leading=14,
+            spaceAfter=12
+        )
+        bullet_style = ParagraphStyle(
+            'CustomBullet',
+            parent=styles['Normal'],
+            fontSize=12,
+            leading=14,
+            leftIndent=20,
+            spaceAfter=12
+        )
+        
+        # Build PDF content
+        story = []
+        
+        # Title
+        story.append(Paragraph("Medical Records Summary", title_style))
+        story.append(Paragraph(datetime.now().strftime('%Y-%m-%d'), normal_style))
+        story.append(Spacer(1, 30))
+        
+        # Process each section in the JSON
+        for section_name, section_data in summary_data.items():
+            # Create section heading by converting section_name to title case
+            heading = section_name.replace('_', ' ').title()
+            story.append(Paragraph(heading, heading_style))
+            
+            # Get the section content
+            content = section_data.get('section', '')
+            
+            # Handle different content types
+            if isinstance(content, str):
+                # Single paragraph
+                story.append(Paragraph(content, normal_style))
+            elif isinstance(content, list):
+                # Handle each list item
+                for item in content:
+                    if section_name == 'medical_history':
+                        # For medical history, each visit is a bullet point with indented details
+                        visit_entries = str(item).split('\n\n')  # Split by double newline to separate visits
+                        for visit in visit_entries:
+                            if visit.strip():
+                                # Add bullet point for the visit
+                                story.append(Paragraph(f"• {visit.replace('\n', '<br/>')}", bullet_style))
+                    else:
+                        # For other sections, simple bullet points
+                        story.append(Paragraph(f"• {item}", bullet_style))
+            
+            # Add space after section
+            story.append(Spacer(1, 20))
+            
+            # If there's a summary subsection (specifically for medical_history)
+            if isinstance(section_data, dict) and 'summary' in section_data:
+                story.append(Paragraph("Summary", heading_style))
+                story.append(Paragraph(section_data['summary'], normal_style))
+                story.append(Spacer(1, 20))
+        
+        # Build the PDF
+        doc.build(story)
+        
+        return output_pdf
+        
+    except Exception as e:
+        logging.error(f"Error generating overall summary PDF: {str(e)}")
+        raise
+
 if __name__ == "__main__":
     config_path = "config/config.yaml"
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
+    
+    # Generate overall summary PDF
+    try:
+        summary_pdf = generate_overall_summary_pdf(config)
+        print(f"Generated overall summary PDF: {summary_pdf}")
+    except Exception as e:
+        print(f"Error generating overall summary PDF: {str(e)}")
+    
     generate_medical_records_pdf(config_path, config['output_pdf'])
