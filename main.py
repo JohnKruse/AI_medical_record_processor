@@ -554,6 +554,11 @@ def main():
         create_html_page(records_df.to_dict('records'), output_html_path, overall_summary)
         logging.info(f"Created HTML output at: {output_html_path}")
 
+        # Generate the final rollup PDF with all records
+        output_pdf = config.get('output_pdf', 'medical_records_output.pdf')
+        generate_medical_records_pdf('config/config.yaml', output_pdf)
+        logging.info(f"Generated final medical records PDF: {os.path.join(output_location, output_pdf)}")
+
         # Now rename all records except the summary PDF record again
         # We already renamed normal records above, but summary PDF was just added.
         # Attempt to rename the summary PDF would place it into records_dir.

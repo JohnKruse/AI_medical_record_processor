@@ -1,12 +1,5 @@
-# Configuration - only ignore the template
+# Configuration - only ignore sensitive files
 *.env
-config/*.yaml
-!config/*template*.yaml
-
-# Logs
-*.log
-*.log.*
-medical_rec_process.log*
 
 # Python
 __pycache__/
@@ -49,6 +42,3 @@ git_ignore/project.md
 
 # Virtual Environment
 venv/
-.env/
-.venv/
-ENV/
