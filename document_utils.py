@@ -124,6 +124,8 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     logging.info(f"Loaded config: {config}")
     logging.info(f"Output language from config: {config.get('output_language', 'en')}")
     
+    output_short_summary_pdf = config.get('output_short_summary_pdf', 'overall_short_summary.pdf')
+    
     # Initialize translation manager with configured language
     translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
     translator = TranslationManager(translations_dir, default_language='en')
@@ -148,6 +150,10 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     
     # Get the absolute path of the output directory
     output_dir = os.path.dirname(os.path.abspath(output_path))
+    
+    # Filter out the short summary record from the left panel
+    # The short summary record is identified by visit_type == 'Overall Summary'
+    filtered_records = [r for r in sorted_records if r.get('visit_type', '') != 'Overall Summary']
     
     html_content = f"""<!DOCTYPE html>
 <html lang="{tr['language_metadata']['code']}">
@@ -442,7 +448,7 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     <div class="content">
         <div class="file-list">
             <div class="file-list-header">
-                {tr['pdf']['records_included']} ({len(sorted_records)})
+                {tr['pdf']['records_included']} ({len(filtered_records)})
             </div>
             <div class="file-list-content">
                 <ul>
@@ -455,7 +461,7 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
                         f'<span class="number">{i + 2}.</span>'
                         f'{record.get("new_filename", "Unnamed Record")}'
                         f'</li>'
-                        for i, record in enumerate(sorted_records)
+                        for i, record in enumerate(filtered_records)
                     ])}
                 </ul>
             </div>
@@ -469,11 +475,12 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
         </div>
     </div>
     <script>
-        // Initialize records data
+        // Initialize records data (including overall summary and short summary PDF name)
         const records = {json.dumps(sorted_records)};
         const overallSummary = {json.dumps(overall_summary) if overall_summary else 'null'};
         const translations = {json.dumps(tr)};
         const pdfStatus = {json.dumps(pdf_status)};
+        const shortSummaryPdf = "{output_short_summary_pdf}";
         let currentIndex = -1;
         
         // Format lists for display
@@ -505,6 +512,16 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
             if (index === -1) {{
                 // Show overall summary
                 const summaryHtml = '<div class="record-details">' +
+                    '<div class="actions">' +
+                        '<button class="btn btn-print" onclick="window.print()">' +
+                            '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">' +
+                                '<path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>' +
+                                '<path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>' +
+                            '</svg>' +
+                            translations.actions.print +
+                        '</button>' +
+                        '<a href="' + shortSummaryPdf + '" target="_blank" class="btn">' + translations.actions.view_original + '</a>' +
+                    '</div>' +
                     '<h2>' + translations.pdf.overall_summary + '</h2>' +
                     '<div class="summary-section">' +
                         '<h3>' + translations.summary_sections.patient_description + '</h3>' +
@@ -617,7 +634,7 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     </script>
 </body>
 </html>"""
-    
+
     # Write the HTML file
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
@@ -626,8 +643,8 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     details_dir = os.path.join(output_dir, 'html', 'details')
     os.makedirs(details_dir, exist_ok=True)
     
-    # Create individual detail pages
-    for record in sorted_records:
+    # Create individual detail pages (for filtered records only, since summary has no detail page)
+    for record in filtered_records:
         create_detail_page(record, output_dir)
 
 def save_to_csv(records, csv_path):
@@ -637,9 +654,9 @@ def save_to_csv(records, csv_path):
         'Original Filename': r['original_filename'],
         'New Filename': r['new_filename'],
         'Checksum': r['checksum'],
-        'Summary': r.get('summary', 'No summary available'),  # Use .get() to avoid KeyError
+        'Summary': r.get('summary', 'No summary available'),
         'Text': r['text'],
-        'API Response': r.get('api_response', {})  # Add the API response column
+        'API Response': r.get('api_response', {})
     } for r in records])
     
     df.to_csv(csv_path, index=False)

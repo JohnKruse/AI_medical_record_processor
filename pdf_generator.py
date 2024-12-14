@@ -15,7 +15,12 @@ from translation_manager import TranslationManager
 import logging
 
 def generate_medical_records_pdf(config_path, output_pdf):
-    """Generate a PDF report of medical records."""
+    """Generate a PDF report of medical records with requested structure:
+       - Cover page with "medical_records" title, patient name, date YYYY-MM-DD
+       - Table of contents
+       - Summary (the short summary PDF specified by output_short_summary_pdf)
+       - Each doc: doc cover page (with info) + original file
+    """
     try:
         # Load configuration
         with open(config_path, 'r') as f:
@@ -31,17 +36,20 @@ def generate_medical_records_pdf(config_path, output_pdf):
         data_file = os.path.join(output_location, 'data_files', 'extracted_data.csv')
         records_dir = os.path.join(output_location, 'records')
         
+        # short summary pdf
+        short_summary_pdf = os.path.join(output_location, config.get('output_short_summary_pdf', 'overall_short_summary.pdf'))
+        
         # Load records
         df = pd.read_csv(data_file)
         
-        # Sort records by treatment date
+        # Filter out the "Overall Summary" since it's the short summary PDF we will add separately
+        # Actually, we will just handle it by not including it in the TOC as a separate doc. The instructions say the rollup includes it after the TOC.
         df['treatment_date'] = pd.to_datetime(df['treatment_date'], errors='coerce')
         df = df.sort_values('treatment_date', ascending=False)
         
-        # Create a temporary PDF for the cover pages and TOC
+        # Create a temporary PDF for the cover and TOC
         temp_cover_pdf = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False).name
         
-        # Create PDF document with larger margins
         doc = SimpleDocTemplate(
             temp_cover_pdf,
             pagesize=letter,
@@ -71,7 +79,7 @@ def generate_medical_records_pdf(config_path, output_pdf):
         # Build PDF content
         story = []
         
-        # 1. Cover sheet
+        # Cover page
         patient_name = df['patient_last_name'].iloc[0] if not pd.isna(df['patient_last_name'].iloc[0]) else translator.get('status.unknown')
         patient_fname = df['patient_first_name'].iloc[0] if not pd.isna(df['patient_first_name'].iloc[0]) else ""
         current_date = datetime.now().strftime('%Y-%m-%d')
@@ -80,20 +88,14 @@ def generate_medical_records_pdf(config_path, output_pdf):
         story.append(Paragraph(current_date, title_style))
         story.append(PageBreak())
         
-        # 2. Overall Summary page
-        if os.path.exists(os.path.join(output_location, 'data_files', 'overall_summary.txt')):
-            with open(os.path.join(output_location, 'data_files', 'overall_summary.txt'), 'r') as f:
-                summary = f.read()
-            story.append(Paragraph(translator.get('pdf.overall_summary'), heading_style))
-            story.append(Paragraph(summary, normal_style))
-            story.append(PageBreak())
-        
-        # 3. Records Included
+        # Table of contents
         story.append(Paragraph(translator.get('pdf.records_included'), heading_style))
         
-        # Create table of contents with proper column widths
+        # Filter out the overall summary record from the TOC listing, since we will add the short summary pdf separately
+        doc_records = df[df['visit_type'] != 'Overall Summary'].copy()
+        
         records_data = []
-        for i, (_, record) in enumerate(df.iterrows(), 1):
+        for i, (_, record) in enumerate(doc_records.iterrows(), 1):
             records_data.append([
                 str(i),
                 record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else translator.get('status.unknown'),
@@ -109,20 +111,16 @@ def generate_medical_records_pdf(config_path, output_pdf):
             Paragraph(translator.get('fields.provider_name'), normal_style)
         ]
         
-        # Calculate available width (letter page width minus margins)
-        available_width = letter[0] - 2*inch  # Total width minus left and right margins
-        
-        # Distribute column widths proportionally
+        available_width = letter[0] - 2*inch
         col_widths = [
-            0.5*inch,              # # column
-            1.5*inch,             # Treatment Date
-            2.0*inch,             # Visit Type
-            available_width - (0.5 + 1.5 + 2.0)*inch  # Doctor Name gets remaining space
+            0.5*inch,
+            1.5*inch,
+            2.0*inch,
+            available_width - (0.5 + 1.5 + 2.0)*inch
         ]
         
         records_table = Table([headers] + records_data, colWidths=col_widths)
         records_table.setStyle(TableStyle([
-            # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -130,43 +128,38 @@ def generate_medical_records_pdf(config_path, output_pdf):
             ('FONTSIZE', (0, 0), (-1, 0), 12),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             ('TOPPADDING', (0, 0), (-1, 0), 12),
-            
-            # Data rows styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
             ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 10),
             ('BOTTOMPADDING', (0, 1), (-1, -1), 10),
             ('TOPPADDING', (0, 1), (-1, -1), 10),
-            
-            # Grid styling
             ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-            ('LINEBELOW', (0, 0), (-1, 0), 2, colors.grey),  # Thicker line below header
-            
-            # Alignment
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Align to top for wrapped text
+            ('LINEBELOW', (0, 0), (-1, 0), 2, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING', (0, 0), (-1, -1), 8),
             ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-            
-            # First two columns (# and date) centered
             ('ALIGN', (0, 0), (1, -1), 'CENTER'),
         ]))
         
         story.append(records_table)
         story.append(PageBreak())
         
-        # Build the cover pages PDF
+        # Build the cover + TOC PDF
         doc.build(story)
         
         # Now merge all PDFs
         pdf_merger = PyPDF2.PdfMerger()
         
-        # Add cover pages
+        # Add cover+TOC
         pdf_merger.append(temp_cover_pdf)
         
-        # Add each record's PDF with its cover page
-        for i, (_, record) in enumerate(df.iterrows(), 1):
-            # Create a temporary PDF for the record cover page
+        # Add the short summary PDF (overall summary) after TOC
+        if os.path.exists(short_summary_pdf):
+            pdf_merger.append(short_summary_pdf)
+        
+        # Add each doc with its cover
+        for i, (_, record) in enumerate(doc_records.iterrows(), 1):
             temp_record_cover = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False).name
             doc = SimpleDocTemplate(
                 temp_record_cover,
@@ -199,15 +192,12 @@ def generate_medical_records_pdf(config_path, output_pdf):
             
             doc.build(story)
             
-            # Add record cover page
             pdf_merger.append(temp_record_cover)
             
-            # Add the actual record PDF if it exists
             record_pdf = os.path.join(records_dir, record['new_filename'])
             if os.path.exists(record_pdf):
                 pdf_merger.append(record_pdf)
             
-            # Clean up temporary cover page
             os.unlink(temp_record_cover)
         
         # Write the final merged PDF
@@ -215,7 +205,6 @@ def generate_medical_records_pdf(config_path, output_pdf):
         with open(output_path, 'wb') as output_file:
             pdf_merger.write(output_file)
         
-        # Clean up
         pdf_merger.close()
         os.unlink(temp_cover_pdf)
     except Exception as e:
@@ -224,35 +213,33 @@ def generate_medical_records_pdf(config_path, output_pdf):
 def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
     """Generate a PDF report from the overall summary JSON."""
     try:
-        # Handle config input
         if isinstance(config_path_or_dict, dict):
             config = config_path_or_dict
         else:
             with open(config_path_or_dict, 'r') as f:
                 config = json.load(f) if str(config_path_or_dict).endswith('.json') else yaml.safe_load(f)
         
-        # Initialize translation manager
         translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
         translator = TranslationManager(translations_dir, default_language='en')
         translator.set_language(config.get('output_language', 'en'))
         
-        # Setup paths
         output_location = config['output_location']
         summary_file = os.path.join(output_location, 'data_files', 'overall_summary.json')
         
         if not os.path.exists(summary_file):
             raise FileNotFoundError(f"Overall summary file not found: {summary_file}")
             
-        # Load summary data
         with open(summary_file, 'r') as f:
             summary_data = json.load(f)
             
-        # Set output PDF path if not provided
         if output_pdf is None:
             current_date = datetime.now().strftime('%Y%m%d')
             output_pdf = os.path.join(output_location, 'records', f'overall_summary_{current_date}.pdf')
             
-        # Create PDF document
+        from reportlab.lib.pagesizes import letter
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        
         doc = SimpleDocTemplate(
             output_pdf,
             pagesize=letter,
@@ -262,14 +249,13 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
             bottomMargin=1*inch
         )
         
-        # Styles
         styles = getSampleStyleSheet()
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Title'],
             fontSize=24,
             spaceAfter=30,
-            alignment=1  # Center alignment
+            alignment=1
         )
         heading_style = ParagraphStyle(
             'CustomHeading',
@@ -293,51 +279,31 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
             spaceAfter=12
         )
         
-        # Build PDF content
         story = []
         
-        # Title
         story.append(Paragraph("Medical Records Summary", title_style))
         story.append(Paragraph(datetime.now().strftime('%Y-%m-%d'), normal_style))
         story.append(Spacer(1, 30))
         
-        # Process each section in the JSON
         for section_name, section_data in summary_data.items():
-            # Create section heading by converting section_name to title case
             heading = section_name.replace('_', ' ').title()
             story.append(Paragraph(heading, heading_style))
             
-            # Get the section content
             content = section_data.get('section', '')
             
-            # Handle different content types
             if isinstance(content, str):
-                # Single paragraph
                 story.append(Paragraph(content, normal_style))
             elif isinstance(content, list):
-                # Handle each list item
                 for item in content:
-                    if section_name == 'medical_history':
-                        # For medical history, each visit is a bullet point with indented details
-                        visit_entries = str(item).split('\n\n')  # Split by double newline to separate visits
-                        for visit in visit_entries:
-                            if visit.strip():
-                                # Add bullet point for the visit
-                                story.append(Paragraph(f"• {visit.replace('\n', '<br/>')}", bullet_style))
-                    else:
-                        # For other sections, simple bullet points
-                        story.append(Paragraph(f"• {item}", bullet_style))
+                    story.append(Paragraph(f"• {item}", bullet_style))
             
-            # Add space after section
             story.append(Spacer(1, 20))
             
-            # If there's a summary subsection (specifically for medical_history)
             if isinstance(section_data, dict) and 'summary' in section_data:
                 story.append(Paragraph("Summary", heading_style))
                 story.append(Paragraph(section_data['summary'], normal_style))
                 story.append(Spacer(1, 20))
         
-        # Build the PDF
         doc.build(story)
         
         return output_pdf
@@ -345,17 +311,3 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
     except Exception as e:
         logging.error(f"Error generating overall summary PDF: {str(e)}")
         raise
-
-if __name__ == "__main__":
-    config_path = "config/config.yaml"
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    
-    # Generate overall summary PDF
-    try:
-        summary_pdf = generate_overall_summary_pdf(config)
-        print(f"Generated overall summary PDF: {summary_pdf}")
-    except Exception as e:
-        print(f"Error generating overall summary PDF: {str(e)}")
-    
-    generate_medical_records_pdf(config_path, config['output_pdf'])
