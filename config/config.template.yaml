@@ -9,19 +9,19 @@ output_language: 'en'  # Language for output text (e.g., 'en' for English, 'es' 
 # OCR Configuration
 ocr_language: 'eng+ita' # Add additional languages with + separator (e.g., 'eng+spa') These correspond with the Tesseract language codes (https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)
 
-
 # File Locations
 scans_location: '/path/to/scans/directory'  # Directory containing medical record scans
 output_location: '/path/to/output/directory'      # Directory for processed output
 output_pdf: 'medical_records_output.pdf'  # Name of the compiled PDF file
 output_html: 'medical_records_output.html'  # Name of the main output HTML file
+output_short_summary_pdf: 'overall_short_summary.pdf'  # Name of the overall summary PDF file placed in output dir
 filename_format: '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
 processed_checksums_file: 'processed_files.json'  # File to track processed documents
 
 
 # AI Processing Configuration
 ai_processing:
-  model_name: 'gpt-4'  # OpenAI model to use e.g., 'gpt-4'
+  model_name: 'gpt-4o-mini''  # OpenAI model to use e.g., 'gpt-4o-mini'
   role_prompt: >
     You are an expert ${output_language} translator and medical records analyst. Your task is to extract structured information 
     from medical records. Analyze the provided text and return information in the specified format.
