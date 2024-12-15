@@ -11,33 +11,39 @@ A comprehensive Python-based system for processing, analyzing, and managing medi
   - Automatic file organization and renaming
   
 - **AI-Powered Analysis**
-  - Integration with OpenAI's GPT-4 models
+  - Integration with OpenAI's GPT models
   - Structured medical data extraction
   - Intelligent date and provider detection
   - Multi-language medical terminology processing
+  - Customizable AI processing parameters
+  - Function-based schema for structured responses
   
 - **Data Management**
   - Structured data output (CSV, JSON)
   - Secure document handling with checksums
   - Incremental processing with skip functionality
   - Automated metadata extraction
+  - Overall patient summary generation
   
 - **PDF Generation**
   - Comprehensive medical record PDFs
   - Short summary reports
   - Table of contents generation
   - Original document preservation
+  - Multi-language support in generated PDFs
   
 - **Web Interface**
   - Interactive document viewer
   - Chronological record organization
   - Print functionality
   - Keyboard navigation
+  - Responsive design with custom styling
   
 - **Internationalization**
-  - Multi-language support (English, Italian)
+  - Multi-language support (English, Spanish, German, Italian)
   - Dynamic translation management
   - Language-specific formatting
+  - Configurable OCR language support
 
 ## System Requirements
 
@@ -76,10 +82,19 @@ medical_records_2024/
 │   ├── config.yaml        # Main configuration
 │   └── config.template.yaml# Template configuration
 ├── translations/          # Language files
+│   ├── de.json           # German translations
 │   ├── en.json           # English translations
-│   └── it.json           # Italian translations
+│   ├── es.json           # Spanish translations
+│   ├── it.json           # Italian translations
+│   └── translation_utils.py # Translation utilities
 ├── web_page/             # Web interface assets
+│   ├── Logo.afphoto      # Source logo file
 │   └── Logo.png          # Application logo
+├── html/                 # Web interface components
+│   ├── script.js         # Interface functionality
+│   └── styles.css        # Interface styling
+├── templates/            # HTML templates
+│   └── main.html         # Main template file
 ├── ai_utils.py           # AI processing utilities
 ├── checksum_utils.py     # File integrity verification
 ├── document_utils.py     # Document handling
@@ -88,7 +103,11 @@ medical_records_2024/
 ├── metadata.py          # Metadata management
 ├── openai_processor.py  # OpenAI API integration
 ├── pdf_generator.py     # PDF report generation
-└── translation_manager.py# Translation handling
+├── template_manager.py  # Template handling
+├── text_extraction.py   # Text extraction utilities
+├── translation_manager.py# Translation handling
+├── translator.py        # Translation core functionality
+└── requirements.txt     # Project dependencies
 ```
 
 ## Configuration
@@ -96,14 +115,33 @@ medical_records_2024/
 The system uses a YAML configuration file (`config.yaml`) with the following key settings:
 
 ```yaml
-output_language: 'en'  # or 'it' for Italian
-skip_processed_files: true
-skip_process_review_interval: 180  # days
-scans_location: '/path/to/input/scans'
+# Processing Configuration
+skip_processed_files: false  # Skip recently processed files
+skip_process_review_interval: 180  # Days before reprocessing
+
+# Language Configuration
+output_language: 'en'  # Supported: en, es, de, it
+ocr_language: 'eng+ita'  # Tesseract language codes
+
+# File Locations
+scans_location: '/path/to/scans'
 output_location: '/path/to/output'
-output_pdf: 'medical_records.pdf'
-output_short_summary_pdf: 'medical_records_short_summary.pdf'
-output_html: 'medical_records.html'
+output_pdf: 'medical_records_output.pdf'
+output_html: 'medical_records_output.html'
+output_short_summary_pdf: 'overall_short_summary.pdf'
+
+# AI Processing Configuration
+ai_processing:
+  model_name: 'gpt-4o-mini'
+  max_tokens: 10000
+  temperature: 0.1
+  function_schema:  # Structured response format
+    - patient information
+    - visit details
+    - diagnoses
+    - treatments
+    - medications
+    - test results
 ```
 
 ## Output Structure
@@ -114,23 +152,27 @@ The system generates several outputs:
    - Complete medical records with table of contents
    - Short summary report
    - Individual record PDFs with metadata
+   - Overall patient summary
 
 2. **Web Interface**
    - Interactive HTML viewer
    - Chronological record listing
    - Record details and summaries
+   - Responsive design
 
 3. **Data Files**
    - Extracted data in CSV format
    - Processing metadata in JSON
    - Checksums for processed files
+   - Overall summary in JSON format
 
 ## Processing Features
 
 - **Smart Skip**: Avoids reprocessing recent files
 - **Incremental Updates**: Only processes new or modified files
 - **Error Recovery**: Continues processing despite individual file failures
-- **Logging**: Comprehensive logging with rotation
+- **Logging**: Comprehensive logging with rotation (2 backup files)
+- **Automated Cleanup**: Removes previous output files before processing
 
 ## Security Features
 
@@ -138,6 +180,7 @@ The system generates several outputs:
 - Checksum verification for file integrity
 - No storage of sensitive data in logs
 - Configurable file access patterns
+- Backup file management
 
 ## Dependencies
 
@@ -162,14 +205,16 @@ python main.py
    - View the generated HTML interface
    - Open the comprehensive PDF report
    - Check the data files for extracted information
+   - Review the overall patient summary
 
 ## Error Handling
 
 The system includes robust error handling:
 - Graceful handling of OCR failures
 - Fallback to alternative text extraction methods
-- Detailed error logging
+- Detailed error logging with rotation
 - Continuation despite individual file failures
+- Automatic cleanup of incomplete processing
 
 ## Contributing
 

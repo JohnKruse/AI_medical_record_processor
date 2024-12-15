@@ -5,6 +5,7 @@
         "name_in_english": "English",
         "name_in_native": "English"
     },
+    "privacy_notice": "This medical record contains confidential patient information protected under law. Unauthorized access, use, or disclosure is strictly prohibited and may result in civil and criminal penalties. If you have received this information in error, please notify the healthcare provider immediately and destroy any copies.",
     "page_title": "Medical Records Viewer",
     "actions": {
         "print": "Print",

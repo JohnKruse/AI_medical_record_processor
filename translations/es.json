@@ -5,6 +5,7 @@
         "name_in_english": "Spanish",
         "name_in_native": "Español"
     },
+    "privacy_notice": "Este historial médico contiene información confidencial del paciente protegida por la ley. El acceso, uso o divulgación no autorizados está estrictamente prohibido y puede resultar en sanciones civiles y penales. Si ha recibido esta información por error, notifique inmediatamente al proveedor de atención médica y destruya todas las copias.",
     "page_title": "Visor de Historiales Médicos",
     "actions": {
         "print": "Imprimir",

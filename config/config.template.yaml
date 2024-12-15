@@ -18,10 +18,12 @@ output_short_summary_pdf: 'overall_short_summary.pdf'  # Name of the overall sum
 filename_format: '{patient_last}_{patient_initials}_{treatment_date}_{visit_type}_{provider_name_last}_{seq:03d}'  # Format for renamed files
 processed_checksums_file: 'processed_files.json'  # File to track processed documents
 
+# Privacy Notice (override - if blank, uses language-specific notice from translations)
+privacy_notice: ''
 
 # AI Processing Configuration
 ai_processing:
-  model_name: 'gpt-4o-mini''  # OpenAI model to use e.g., 'gpt-4o-mini'
+  model_name: 'gpt-4o-mini'  # OpenAI model to use e.g., 'gpt-4o-mini'
   role_prompt: >
     You are an expert ${output_language} translator and medical records analyst. Your task is to extract structured information 
     from medical records. Analyze the provided text and return information in the specified format.

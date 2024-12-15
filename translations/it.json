@@ -5,6 +5,7 @@
         "name_in_english": "Italian",
         "name_in_native": "Italiano"
     },
+    "privacy_notice": "Questa cartella clinica contiene informazioni personali riservate protette dalla legge. L'accesso, l'utilizzo o la divulgazione non autorizzati sono severamente vietati e possono comportare sanzioni civili e penali. Se ha ricevuto queste informazioni per errore, la preghiamo di avvisare immediatamente il fornitore di servizi sanitari e distruggere tutte le copie.",
     "page_title": "Visualizzatore Cartelle Cliniche",
     "actions": {
         "print": "Stampa",

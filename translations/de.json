@@ -5,6 +5,7 @@
         "name_in_english": "German",
         "name_in_native": "Deutsch"
     },
+    "privacy_notice": "Diese Krankenakte enthält vertrauliche Patienteninformationen, die gesetzlich geschützt sind. Unbefugter Zugriff, Verwendung oder Weitergabe ist streng verboten und kann zivil- und strafrechtliche Konsequenzen nach sich ziehen. Wenn Sie diese Informationen irrtümlich erhalten haben, benachrichtigen Sie bitte umgehend den Gesundheitsdienstleister und vernichten Sie alle Kopien.",
     "page_title": "Krankenakten-Viewer",
     "actions": {
         "print": "Drucken",
