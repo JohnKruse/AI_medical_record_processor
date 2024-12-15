@@ -151,9 +151,13 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     # Get the absolute path of the output directory
     output_dir = os.path.dirname(os.path.abspath(output_path))
     
-    # Filter out the short summary record from the left panel
+    # Filter out the short summary record from the left panel and sort in reverse chronological order
     # The short summary record is identified by visit_type == 'Overall Summary'
-    filtered_records = [r for r in sorted_records if r.get('visit_type', '') != 'Overall Summary']
+    filtered_records = sorted(
+        [r for r in sorted_records if r.get('visit_type', '') != 'Overall Summary'],
+        key=lambda x: x.get('treatment_date', ''),
+        reverse=True
+    )
     
     html_content = f"""<!DOCTYPE html>
 <html lang="{tr['language_metadata']['code']}">
@@ -442,7 +446,7 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
         <div class="header-main">
             <img src="html/Logo.png" alt="Logo" class="logo">
             <h1>{tr['page_title']}</h1>
-            {f'<a href="records/{pdf_filename}" target="_blank" class="btn btn-pdf">{tr["actions"]["view_complete_pdf"]}</a>' if pdf_filename else ''}
+            {f'<a href="records/{pdf_filename}" target="_blank" class="btn">{tr["actions"]["view_complete_pdf"]}</a>' if pdf_filename else ''}
         </div>
     </header>
     <div class="content">
@@ -476,7 +480,7 @@ def create_html_page(records, output_path, overall_summary=None, pdf_filename=No
     </div>
     <script>
         // Initialize records data (including overall summary and short summary PDF name)
-        const records = {json.dumps(sorted_records)};
+        const records = {json.dumps(filtered_records)};
         const overallSummary = {json.dumps(overall_summary) if overall_summary else 'null'};
         const translations = {json.dumps(tr)};
         const pdfStatus = {json.dumps(pdf_status)};
