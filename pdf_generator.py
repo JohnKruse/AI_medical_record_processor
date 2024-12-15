@@ -17,6 +17,7 @@ import logging
 def generate_medical_records_pdf(config_path, output_pdf):
     """Generate a PDF report of medical records with requested structure:
        - Cover page with "medical_records" title, patient name, date YYYY-MM-DD
+       - Insert short summary PDF right after cover page
        - Table of contents
        - Each doc: doc cover page (with info) + original file
     """
@@ -49,7 +50,7 @@ def generate_medical_records_pdf(config_path, output_pdf):
         lastname = df['patient_last_name'].mode().iloc[0]
         firstname = df['patient_first_name'].mode().iloc[0]
         
-        # Create a temporary PDF for the cover and TOC
+        # Create a temporary PDF for the cover + TOC
         temp_cover_pdf = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False).name
         
         doc = SimpleDocTemplate(
@@ -159,8 +160,40 @@ def generate_medical_records_pdf(config_path, output_pdf):
         # Now merge all PDFs
         pdf_merger = PyPDF2.PdfMerger()
         
-        # Add cover+TOC
-        pdf_merger.append(temp_cover_pdf)
+        # Insert short summary PDF after cover page and before TOC
+        output_short_summary_pdf = config.get('output_short_summary_pdf', 'overall_short_summary.pdf')
+        summary_pdf_path = os.path.join(output_location, output_short_summary_pdf)
+        
+        cover_reader = PyPDF2.PdfReader(temp_cover_pdf)
+        
+        # Append only the first page (cover page)
+        temp_cover_page = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False).name
+        cover_writer = PyPDF2.PdfWriter()
+        cover_writer.add_page(cover_reader.pages[0])
+        with open(temp_cover_page, 'wb') as cover_f:
+            cover_writer.write(cover_f)
+        
+        pdf_merger.append(temp_cover_page)
+        os.unlink(temp_cover_page)
+        
+        # Append the summary PDF
+        if os.path.exists(summary_pdf_path):
+            pdf_merger.append(summary_pdf_path)
+        else:
+            logging.warning(f"Short summary PDF not found at: {summary_pdf_path}")
+        
+        # Append the rest of the TOC pages (if any)
+        if len(cover_reader.pages) > 1:
+            temp_toc = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False).name
+            toc_writer = PyPDF2.PdfWriter()
+            for p in range(1, len(cover_reader.pages)):
+                toc_writer.add_page(cover_reader.pages[p])
+            with open(temp_toc, 'wb') as toc_f:
+                toc_writer.write(toc_f)
+            pdf_merger.append(temp_toc)
+            os.unlink(temp_toc)
+        
+        os.unlink(temp_cover_pdf)
         
         # Add each doc with its cover
         for i, (_, record) in enumerate(df.iterrows(), 1):
@@ -221,7 +254,6 @@ def generate_medical_records_pdf(config_path, output_pdf):
             pdf_merger.write(output_file)
         
         pdf_merger.close()
-        os.unlink(temp_cover_pdf)
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -316,20 +348,30 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
             heading = section_name.replace('_', ' ').title()
             story.append(Paragraph(heading, heading_style))
             
-            content = section_data.get('section', '')
-            
-            if isinstance(content, str):
-                story.append(Paragraph(content, normal_style))
-            elif isinstance(content, list):
-                for item in content:
-                    story.append(Paragraph(f"• {item}", bullet_style))
+            if isinstance(section_data, dict):
+                content = section_data.get('section', '')
+                if isinstance(content, str):
+                    story.append(Paragraph(content, normal_style))
+                elif isinstance(content, list):
+                    for item in content:
+                        story.append(Paragraph(f"• {item}", bullet_style))
+                
+                if 'summary' in section_data:
+                    story.append(Paragraph("Summary", heading_style))
+                    summary_content = section_data['summary']
+                    if isinstance(summary_content, list):
+                        for item in summary_content:
+                            story.append(Paragraph(str(item), normal_style))
+                    else:
+                        story.append(Paragraph(str(summary_content), normal_style))
+            else:
+                if isinstance(section_data, list):
+                    for item in section_data:
+                        story.append(Paragraph(str(item), normal_style))
+                else:
+                    story.append(Paragraph(str(section_data), normal_style))
             
             story.append(Spacer(1, 20))
-            
-            if isinstance(section_data, dict) and 'summary' in section_data:
-                story.append(Paragraph("Summary", heading_style))
-                story.append(Paragraph(section_data['summary'], normal_style))
-                story.append(Spacer(1, 20))
         
         story.append(Spacer(1, 30))  # Add space before privacy notice
         story.append(Paragraph(privacy_notice, privacy_style))
