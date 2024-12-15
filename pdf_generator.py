@@ -18,7 +18,6 @@ def generate_medical_records_pdf(config_path, output_pdf):
     """Generate a PDF report of medical records with requested structure:
        - Cover page with "medical_records" title, patient name, date YYYY-MM-DD
        - Table of contents
-       - Summary (the short summary PDF specified by output_short_summary_pdf)
        - Each doc: doc cover page (with info) + original file
     """
     try:
@@ -36,14 +35,13 @@ def generate_medical_records_pdf(config_path, output_pdf):
         data_file = os.path.join(output_location, 'data_files', 'extracted_data.csv')
         records_dir = os.path.join(output_location, 'records')
         
-        # short summary pdf
-        short_summary_pdf = os.path.join(output_location, config.get('output_short_summary_pdf', 'overall_short_summary.pdf'))
+        # Get privacy notice - use config if not blank, otherwise use translation
+        privacy_notice = config.get('privacy_notice', '').strip()
+        if not privacy_notice:
+            privacy_notice = translator.get('privacy_notice')
         
-        # Load records
+        # Load and sort records by treatment date
         df = pd.read_csv(data_file)
-        
-        # Filter out the "Overall Summary" since it's the short summary PDF we will add separately
-        # Actually, we will just handle it by not including it in the TOC as a separate doc. The instructions say the rollup includes it after the TOC.
         df['treatment_date'] = pd.to_datetime(df['treatment_date'], errors='coerce')
         df = df.sort_values('treatment_date', ascending=False)
         
@@ -75,6 +73,13 @@ def generate_medical_records_pdf(config_path, output_pdf):
             spaceAfter=20
         )
         normal_style = styles['Normal']
+        privacy_style = ParagraphStyle(
+            'PrivacyNotice',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.grey,
+            alignment=1  # Center alignment
+        )
         
         # Build PDF content
         story = []
@@ -86,16 +91,15 @@ def generate_medical_records_pdf(config_path, output_pdf):
         
         story.append(Paragraph(f"{translator.get('pdf.medical_records')}<br/>{patient_name}, {patient_fname}", title_style))
         story.append(Paragraph(current_date, title_style))
+        story.append(Spacer(1, 300))  # Add space before privacy notice
+        story.append(Paragraph(privacy_notice, privacy_style))
         story.append(PageBreak())
         
         # Table of contents
         story.append(Paragraph(translator.get('pdf.records_included'), heading_style))
         
-        # Filter out the overall summary record from the TOC listing, since we will add the short summary pdf separately
-        doc_records = df[df['visit_type'] != 'Overall Summary'].copy()
-        
         records_data = []
-        for i, (_, record) in enumerate(doc_records.iterrows(), 1):
+        for i, (_, record) in enumerate(df.iterrows(), 1):
             records_data.append([
                 str(i),
                 record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else translator.get('status.unknown'),
@@ -154,12 +158,8 @@ def generate_medical_records_pdf(config_path, output_pdf):
         # Add cover+TOC
         pdf_merger.append(temp_cover_pdf)
         
-        # Add the short summary PDF (overall summary) after TOC
-        if os.path.exists(short_summary_pdf):
-            pdf_merger.append(short_summary_pdf)
-        
         # Add each doc with its cover
-        for i, (_, record) in enumerate(doc_records.iterrows(), 1):
+        for i, (_, record) in enumerate(df.iterrows(), 1):
             temp_record_cover = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False).name
             doc = SimpleDocTemplate(
                 temp_record_cover,
@@ -189,6 +189,9 @@ def generate_medical_records_pdf(config_path, output_pdf):
             for label, value in record_info:
                 story.append(Paragraph(f"<b>{label}:</b> {value}", normal_style))
                 story.append(Spacer(1, 12))
+            
+            story.append(Spacer(1, 300))  # Add space before privacy notice
+            story.append(Paragraph(privacy_notice, privacy_style))
             
             doc.build(story)
             
@@ -222,6 +225,11 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
         translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
         translator = TranslationManager(translations_dir, default_language='en')
         translator.set_language(config.get('output_language', 'en'))
+        
+        # Get privacy notice - use config if not blank, otherwise use translation
+        privacy_notice = config.get('privacy_notice', '').strip()
+        if not privacy_notice:
+            privacy_notice = translator.get('privacy_notice')
         
         output_location = config['output_location']
         summary_file = os.path.join(output_location, 'data_files', 'overall_summary.json')
@@ -278,6 +286,13 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
             leftIndent=20,
             spaceAfter=12
         )
+        privacy_style = ParagraphStyle(
+            'PrivacyNotice',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.grey,
+            alignment=1  # Center alignment
+        )
         
         story = []
         
@@ -303,6 +318,9 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
                 story.append(Paragraph("Summary", heading_style))
                 story.append(Paragraph(section_data['summary'], normal_style))
                 story.append(Spacer(1, 20))
+        
+        story.append(Spacer(1, 300))  # Add space before privacy notice
+        story.append(Paragraph(privacy_notice, privacy_style))
         
         doc.build(story)
         
