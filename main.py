@@ -522,7 +522,7 @@ def main():
         generate_overall_summary_pdf(config, summary_pdf_path)
         logging.info(f"Generated overall summary PDF: {summary_pdf_path}")
 
-        # Add summary record (unchanged functionality)
+        # Create summary record but don't add it to the main DataFrame
         summary_record = {
             'treatment_date': dt.now().strftime('%Y-%m-%d'),
             'visit_type': 'Overall Summary',
@@ -537,9 +537,14 @@ def main():
             'checksum': '',
             'notes': 'Automatically generated summary of all medical records'
         }
-        records_df = pd.concat([pd.DataFrame([summary_record]), records_df], ignore_index=True)
 
-        # Update CSV with final records
+        # Store summary record separately in its own CSV
+        summary_df = pd.DataFrame([summary_record])
+        summary_csv_path = os.path.join(output_location, 'data_files', 'summary_data.csv')
+        summary_df.to_csv(summary_csv_path, index=False)
+        logging.info(f"Saved summary data to CSV: {summary_csv_path}")
+
+        # Save main records to CSV (without summary)
         csv_df = records_df.copy()
         for col in ['diagnoses', 'treatments', 'medications']:
             if col in csv_df.columns:

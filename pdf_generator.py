@@ -45,6 +45,10 @@ def generate_medical_records_pdf(config_path, output_pdf):
         df['treatment_date'] = pd.to_datetime(df['treatment_date'], errors='coerce')
         df = df.sort_values('treatment_date', ascending=False)
         
+        # Get mode of patient names
+        lastname = df['patient_last_name'].mode().iloc[0]
+        firstname = df['patient_first_name'].mode().iloc[0]
+        
         # Create a temporary PDF for the cover and TOC
         temp_cover_pdf = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False).name
         
@@ -85,13 +89,13 @@ def generate_medical_records_pdf(config_path, output_pdf):
         story = []
         
         # Cover page
-        patient_name = df['patient_last_name'].iloc[0] if not pd.isna(df['patient_last_name'].iloc[0]) else translator.get('status.unknown')
-        patient_fname = df['patient_first_name'].iloc[0] if not pd.isna(df['patient_first_name'].iloc[0]) else ""
+        patient_name = lastname if not pd.isna(lastname) else translator.get('status.unknown')
+        patient_fname = firstname if not pd.isna(firstname) else ""
         current_date = datetime.now().strftime('%Y-%m-%d')
         
-        story.append(Paragraph(f"{translator.get('pdf.medical_records')}<br/>{patient_name}, {patient_fname}", title_style))
+        story.append(Paragraph(f"{translator.get('pdf.medical_records')}<br/><br/>{patient_name}, {patient_fname}", title_style))
         story.append(Paragraph(current_date, title_style))
-        story.append(Spacer(1, 300))  # Add space before privacy notice
+        story.append(Spacer(1, 30))  # Add space before privacy notice
         story.append(Paragraph(privacy_notice, privacy_style))
         story.append(PageBreak())
         
@@ -175,22 +179,30 @@ def generate_medical_records_pdf(config_path, output_pdf):
             
             record_info = [
                 (translator.get('fields.treatment_date'), 
-                 record['treatment_date'].strftime('%Y-%m-%d') if pd.notna(record['treatment_date']) else translator.get('status.unknown')),
+                 str(record['treatment_date']) if pd.notna(record['treatment_date']) else translator.get('status.unknown')),
                 (translator.get('fields.visit_type'), 
                  str(record['visit_type']) if pd.notna(record['visit_type']) else translator.get('status.unknown')),
                 (translator.get('fields.provider_name'), 
                  str(record['provider_name']) if pd.notna(record['provider_name']) else translator.get('status.unknown')),
+                (translator.get('fields.provider_facility'), 
+                 str(record['provider_facility']) if pd.notna(record['provider_facility']) else translator.get('status.unknown')),
                 (translator.get('fields.primary_condition'), 
                  str(record['primary_condition']) if pd.notna(record['primary_condition']) else translator.get('status.unknown')),
+                (translator.get('fields.summary'), 
+                 str(record['summary']) if pd.notna(record['summary']) else translator.get('status.unknown')),
+                (translator.get('fields.test_results'), 
+                 str(record['test_results']) if pd.notna(record['test_results']) else translator.get('status.unknown')),
                 (translator.get('fields.diagnoses'), 
-                 str(record['diagnoses']) if pd.notna(record['diagnoses']) else translator.get('status.unknown'))
+                 str(record['diagnoses']) if pd.notna(record['diagnoses']) else translator.get('status.unknown')),
+                (translator.get('fields.treatments'), 
+                 str(record['treatments']) if pd.notna(record['treatments']) else translator.get('status.unknown'))
             ]
             
             for label, value in record_info:
                 story.append(Paragraph(f"<b>{label}:</b> {value}", normal_style))
                 story.append(Spacer(1, 12))
             
-            story.append(Spacer(1, 300))  # Add space before privacy notice
+            story.append(Spacer(1, 30))  # Add space before privacy notice
             story.append(Paragraph(privacy_notice, privacy_style))
             
             doc.build(story)
@@ -319,7 +331,7 @@ def generate_overall_summary_pdf(config_path_or_dict, output_pdf=None):
                 story.append(Paragraph(section_data['summary'], normal_style))
                 story.append(Spacer(1, 20))
         
-        story.append(Spacer(1, 300))  # Add space before privacy notice
+        story.append(Spacer(1, 30))  # Add space before privacy notice
         story.append(Paragraph(privacy_notice, privacy_style))
         
         doc.build(story)
