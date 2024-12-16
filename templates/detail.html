@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${page_title} - ${filename}</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .raw-text {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        .metadata {
+            margin-bottom: 2rem;
+        }
+        .metadata table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .metadata th {
+            text-align: left;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            width: 200px;
+        }
+        .metadata td {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+        .actions {
+            margin: 1rem 0;
+            display: flex;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>${filename}</h1>
+            <div class="actions">
+                <button class="btn primary-btn" onclick="window.print()">
+                    ${print_button}
+                </button>
+                <a href="../../records/${original_filename}" target="_blank" class="btn secondary-btn">
+                    ${view_original}
+                </a>
+                <a href="../index.html" class="btn secondary-btn">
+                    ${back_to_list}
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <div class="metadata">
+                <table>
+                    <tr>
+                        <th>${treatment_date_label}</th>
+                        <td>${treatment_date}</td>
+                    </tr>
+                    <tr>
+                        <th>${visit_type_label}</th>
+                        <td>${visit_type}</td>
+                    </tr>
+                    <tr>
+                        <th>${provider_name_label}</th>
+                        <td>${provider_name}</td>
+                    </tr>
+                    <tr>
+                        <th>${diagnoses_label}</th>
+                        <td>${diagnoses}</td>
+                    </tr>
+                    <tr>
+                        <th>${treatments_label}</th>
+                        <td>${treatments}</td>
+                    </tr>
+                    <tr>
+                        <th>${medications_label}</th>
+                        <td>${medications}</td>
+                    </tr>
+                    <tr>
+                        <th>${summary_label}</th>
+                        <td>${summary}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h2>${raw_text_label}</h2>
+            <div class="raw-text">${raw_text}</div>
+        </main>
+    </div>
+</body>
+</html>
