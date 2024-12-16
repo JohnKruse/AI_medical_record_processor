@@ -522,7 +522,6 @@ def main():
         generate_overall_summary_pdf(config, summary_pdf_path)
         logging.info(f"Generated overall summary PDF: {summary_pdf_path}")
 
-        # Create summary record but don't add it to the main DataFrame
         summary_record = {
             'treatment_date': dt.now().strftime('%Y-%m-%d'),
             'visit_type': 'Overall Summary',
@@ -538,7 +537,6 @@ def main():
             'notes': 'Automatically generated summary of all medical records'
         }
 
-        # Store summary record separately in its own CSV
         summary_df = pd.DataFrame([summary_record])
         summary_csv_path = os.path.join(output_location, 'data_files', 'summary_data.csv')
         summary_df.to_csv(summary_csv_path, index=False)
@@ -553,28 +551,21 @@ def main():
         csv_df.to_csv(csv_path, index=False)
         logging.info(f"Saved data to CSV: {csv_path}")
 
-        # Re-generate HTML after adding summary record
         output_html = config.get('output_html', 'output.html')
         output_html_path = os.path.join(output_location, output_html)
-        create_html_page(records_df.to_dict('records'), output_html_path, overall_summary)
+
+        # ADDING THE pdf_filename PARAMETER BELOW:
+        # The output_pdf is defined in config and we've generated it.
+        output_pdf = config.get('output_pdf', 'medical_records_output.pdf')
+        # Pass output_pdf to create_html_page to show the link
+        create_html_page(records_df.to_dict('records'), output_html_path, overall_summary, pdf_filename=output_pdf)
         logging.info(f"Created HTML output at: {output_html_path}")
 
         # Generate the final rollup PDF with all records
-        output_pdf = config.get('output_pdf', 'medical_records_output.pdf')
         generate_medical_records_pdf('config/config.yaml', output_pdf)
         logging.info(f"Generated final medical records PDF: {os.path.join(output_location, output_pdf)}")
 
-        # Now rename all records except the summary PDF record again
-        # We already renamed normal records above, but summary PDF was just added.
-        # Attempt to rename the summary PDF would place it into records_dir.
-        # We must skip that to keep it in output dir as requested.
-        # Additive change: skip copying for the 'Overall Summary' record:
-        for index, record in records_df.iterrows():
-            if record.get('visit_type') == 'Overall Summary':
-                # Skip re-processing this record to keep summary PDF in output dir
-                continue
-            # For others, if needed, ensure they are properly named and placed. They already are.
-
+        # Skip reprocessing the 'Overall Summary' record again, no changes needed to that block.
         logging.info("Processing complete")
 
     except Exception as e:

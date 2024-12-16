@@ -36,6 +36,9 @@ processed_files.json
 output/
 scans/
 project.md
+*.log
+*.log.*
+config/config.yaml
 
 # Project notes
 git_ignore/project.md
